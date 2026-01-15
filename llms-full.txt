@@ -1,0 +1,985 @@
+# Documentation Home
+
+
+
+# NorthRelay Public Documentation
+
+> **Purpose:** User-facing documentation for docs.northrelay.ca\
+> **Status:** Active development
+
+***
+
+## Quick Links
+
+* [Getting Started](./getting-started/introduction)
+* [Two-Pool System](./features/two-pool-system)
+* [DNS Setup Guide](./guides/dns-setup)
+* [API Reference](./api-reference/introduction)
+
+***
+
+## Structure
+
+```
+docs/public/
+├── getting-started/     # Onboarding & quick start
+├── features/            # Feature explanations
+├── guides/              # How-to guides
+├── api-reference/       # API documentation
+├── billing/             # Plans & invoices
+└── legal/               # Terms & policies
+```
+
+***
+
+## Content Guidelines
+
+1. **User-focused:** Write for developers, not internal team
+2. **Actionable:** Every page should answer "How do I...?"
+3. **Code examples:** Include copy-paste ready snippets
+4. **No internal references:** Don't link to internal specs
+
+
+# Welcome to NorthRelay Documentation
+
+
+
+# Welcome to NorthRelay
+
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery without the risks of shared IP reputation.
+
+## Quick Links
+
+<Cards>
+  <Card title="Getting Started" href="/docs/getting-started/introduction">
+    Learn what NorthRelay is and how it works
+  </Card>
+
+  <Card title="Installation" href="/docs/getting-started/installation">
+    Set up NorthRelay in under 5 minutes
+  </Card>
+
+  <Card title="API Reference" href="/docs/api-reference/authentication">
+    Explore our REST API and webhooks
+  </Card>
+
+  <Card title="Guides" href="/docs/guides/dns-verification">
+    Step-by-step tutorials for common tasks
+  </Card>
+</Cards>
+
+## Why NorthRelay?
+
+### The "Noisy Neighbor" Problem
+
+When you use traditional email services, you share IP addresses with thousands of other senders. If one of them sends spam, **your emails suffer too**.
+
+### The NorthRelay Solution
+
+Our **Two-Pool System** gives you control:
+
+* **Shared Pool** - For development and low-volume senders (free & $5/mo)
+* **Isolated Pool** - Dedicated reputation for production apps ($29+/mo)
+
+[Get Started →](/docs/getting-started/introduction)
+
+
+# API Authentication
+
+
+
+# API Authentication
+
+> How to authenticate with the NorthRelay API
+
+***
+
+## API Keys
+
+*Content pending*
+
+***
+
+## Creating an API Key
+
+*Content pending*
+
+***
+
+## Using Your API Key
+
+*Content pending*
+
+***
+
+## Key Security Best Practices
+
+*Content pending*
+
+
+# Domains API
+
+
+
+# Domains API
+
+> Manage your sending domains via API
+
+***
+
+## List Domains
+
+*Content pending*
+
+***
+
+## Add Domain
+
+*Content pending*
+
+***
+
+## Verify Domain
+
+*Content pending*
+
+***
+
+## Delete Domain
+
+*Content pending*
+
+
+# API Reference
+
+
+
+# API Reference
+
+> NorthRelay API documentation
+
+***
+
+## Base URL
+
+*Content pending*
+
+***
+
+## Authentication
+
+*Content pending*
+
+***
+
+## Rate Limits
+
+*Content pending*
+
+***
+
+## Error Handling
+
+*Content pending*
+
+
+# Sending API
+
+
+
+# Sending API
+
+> Send emails via the NorthRelay API
+
+***
+
+## SMTP vs API
+
+*Content pending*
+
+***
+
+## Send Email
+
+*Content pending*
+
+***
+
+## Batch Sending
+
+*Content pending*
+
+***
+
+## Templates
+
+*Content pending*
+
+
+# Webhooks
+
+
+
+# Webhooks
+
+> Receive real-time delivery notifications
+
+***
+
+## Overview
+
+*Content pending*
+
+***
+
+## Webhook Events
+
+*Content pending*
+
+***
+
+## Configuring Webhooks
+
+*Content pending*
+
+***
+
+## Payload Format
+
+*Content pending*
+
+***
+
+## Verification
+
+*Content pending*
+
+
+# Billing FAQ
+
+
+
+# Billing FAQ
+
+> Frequently asked questions about billing
+
+***
+
+## General Questions
+
+*Content pending*
+
+***
+
+## Payment Questions
+
+*Content pending*
+
+***
+
+## Refund Policy
+
+*Content pending*
+
+***
+
+## Enterprise & Custom Plans
+
+*Content pending*
+
+
+# Invoices
+
+
+
+# Invoices
+
+> View and download your invoices
+
+***
+
+## Accessing Invoices
+
+*Content pending*
+
+***
+
+## Invoice Details
+
+*Content pending*
+
+***
+
+## Downloading PDFs
+
+*Content pending*
+
+***
+
+## Payment Methods
+
+*Content pending*
+
+
+# Plans & Pricing
+
+
+
+# Plans & Pricing
+
+> Compare NorthRelay subscription tiers
+
+***
+
+## Plan Comparison
+
+*Content pending*
+
+***
+
+## Sandbox (Free)
+
+*Content pending*
+
+***
+
+## Micro ($5/month)
+
+*Content pending*
+
+***
+
+## Startup ($29/month)
+
+*Content pending*
+
+***
+
+## Scale ($65/month)
+
+*Content pending*
+
+***
+
+## Upgrading
+
+*Content pending*
+
+
+# Diagnostic Tools
+
+
+
+# Diagnostic Tools
+
+> Self-service tools to troubleshoot delivery issues
+
+***
+
+## Pre-Flight Check
+
+*Content pending*
+
+***
+
+## Connectivity Doctor
+
+*Content pending*
+
+***
+
+## Blocklist Monitor
+
+*Content pending*
+
+
+# Domain Verification
+
+
+
+# Domain Verification
+
+> How to verify your custom sending domain
+
+***
+
+## Why Verify Your Domain?
+
+*Content pending*
+
+***
+
+## Required DNS Records
+
+*Content pending*
+
+***
+
+## Step-by-Step Verification
+
+*Content pending*
+
+***
+
+## Troubleshooting Verification
+
+*Content pending*
+
+
+# Reputation Monitoring
+
+
+
+# Reputation Monitoring
+
+> Track and maintain your sender reputation
+
+***
+
+## Understanding Sender Reputation
+
+*Content pending*
+
+***
+
+## Reputation Score
+
+*Content pending*
+
+***
+
+## Factors That Affect Reputation
+
+*Content pending*
+
+***
+
+## Improving Your Reputation
+
+*Content pending*
+
+
+# The Two-Pool System
+
+
+
+# The Two-Pool System
+
+> Understanding Shared vs Isolated IP pools
+
+***
+
+## What Are IP Pools?
+
+When you send email through NorthRelay, your messages exit through one of two **IP pools**:
+
+| Pool         | Tiers          | Exit IP           | Use Case                      |
+| ------------ | -------------- | ----------------- | ----------------------------- |
+| **Shared**   | Sandbox, Micro | VPS 1 (Public IP) | Development, low-volume       |
+| **Isolated** | Startup, Scale | VPS 2 (WireGuard) | Production, business-critical |
+
+***
+
+## Shared Pool
+
+The Shared Pool is perfect for:
+
+* Development and testing
+* Low-volume transactional emails
+* Startups validating product-market fit
+
+**Trade-off:** You share IP reputation with other senders. If someone else on the pool sends spam, it could affect your deliverability.
+
+***
+
+## Isolated Pool
+
+The Isolated Pool provides **sovereign IP reputation**:
+
+* Your emails exit through a dedicated gateway
+* No "noisy neighbor" risk
+* Premium deliverability for business-critical emails
+
+```
+Your Email → NorthRelay → WireGuard Tunnel → Isolated Gateway → Gmail/Outlook
+```
+
+***
+
+## Which Pool Is Right for You?
+
+| Scenario                   | Recommended Pool   |
+| -------------------------- | ------------------ |
+| Just testing               | Shared (Sandbox)   |
+| Side project               | Shared (Micro)     |
+| SaaS with paying customers | Isolated (Startup) |
+| Enterprise/High volume     | Isolated (Scale)   |
+
+***
+
+## Upgrading Between Pools
+
+Upgrading is instant:
+
+1. Go to **Dashboard → Billing**
+2. Select your new tier
+3. Complete payment
+4. Your next email automatically routes through the Isolated Pool
+
+No code changes required - routing is handled automatically based on your account tier.
+
+
+# Send Your First Email
+
+
+
+# Send Your First Email
+
+> A step-by-step guide to sending your first email through NorthRelay
+
+***
+
+## Using SMTP
+
+```javascript
+// Node.js with Nodemailer
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.north-pipe.ca',
+  port: 587,
+  secure: false,
+  auth: {
+    user: 'your-email@example.com',
+    pass: 'nr_live_xxxxxxxxxxxx',
+  },
+});
+
+await transporter.sendMail({
+  from: 'you@yourdomain.com',
+  to: 'customer@example.com',
+  subject: 'Hello from NorthRelay!',
+  text: 'Your first email sent successfully.',
+});
+```
+
+***
+
+## Using the API
+
+*Content pending*
+
+***
+
+## Verifying Delivery
+
+*Content pending*
+
+***
+
+## Troubleshooting
+
+*Content pending*
+
+
+# Installation & Quick Start
+
+
+
+# Installation & Quick Start
+
+> Get up and running with NorthRelay in 5 minutes
+
+***
+
+## Prerequisites
+
+* A NorthRelay account ([Sign up here](https://northrelay.ca/signup))
+* An application that sends email (WordPress, Node.js, Python, etc.)
+
+***
+
+## Step 1: Create an Account
+
+1. Go to [northrelay.ca/signup](https://northrelay.ca/signup)
+2. Enter your email and create a password
+3. Verify your email address
+
+***
+
+## Step 2: Get Your SMTP Credentials
+
+After logging in, navigate to **Dashboard → API Keys** and create a new API key:
+
+```
+SMTP Host: smtp.north-pipe.ca
+SMTP Port: 587 (TLS)
+Username: your-email@example.com
+Password: nr_live_xxxxxxxxxxxx (your API key)
+```
+
+***
+
+## Step 3: Configure Your Application
+
+Use the SMTP settings above in your application. See our integration guides for:
+
+* [Node.js (Nodemailer)](../guides/nodejs-integration)
+* [Python (smtplib)](../guides/python-integration)
+* [WordPress](../guides/wordpress-integration)
+
+***
+
+## Step 4: Send a Test Email
+
+```bash
+# Using swaks (SMTP testing tool)
+swaks --to test@example.com \
+      --from you@yourdomain.com \
+      --server smtp.north-pipe.ca:587 \
+      --auth LOGIN \
+      --auth-user your-email@example.com \
+      --auth-password nr_live_xxxxxxxxxxxx \
+      --tls
+```
+
+***
+
+## Next Steps
+
+* [DNS Setup Guide](../guides/dns-setup) - Configure SPF, DKIM, DMARC
+* [Two-Pool System](../features/two-pool-system) - Understand IP reputation pools
+
+
+# Introduction to NorthRelay
+
+
+
+# Introduction to NorthRelay
+
+> What is NorthRelay and why should you use it?
+
+***
+
+## Overview
+
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery without the risks of shared IP reputation.
+
+***
+
+## The "Noisy Neighbor" Problem
+
+When you use traditional email services, you share IP addresses with thousands of other senders. If one of them sends spam or gets blacklisted, **your emails suffer too**.
+
+This is the "noisy neighbor" problem - your legitimate business emails end up in spam folders because of someone else's bad behavior.
+
+***
+
+## How NorthRelay Solves It
+
+NorthRelay uses a **Two-Pool System**:
+
+1. **Shared Pool** - For development and low-volume senders (Sandbox & Micro tiers)
+2. **Isolated Pool** - Dedicated IP reputation for paid users (Startup & Scale tiers)
+
+When you upgrade to an Isolated Pool, your emails exit through a **completely separate IP address**. Your reputation is yours alone.
+
+***
+
+## Key Features
+
+* 🚀 **Quick Setup** - Send emails in under 5 minutes
+* 🛡️ **Sovereign IPs** - No noisy neighbors on paid tiers
+* 🔧 **Self-Service Tools** - Pre-Flight Check, Blocklist Monitor, Connectivity Doctor
+* 📊 **Real-Time Analytics** - See delivery status, bounces, and reputation scores
+* 🔐 **Enterprise Security** - TLS encryption, DKIM signing, DMARC compliance
+
+***
+
+## Next Steps
+
+* [Installation Guide](./installation)
+* [Send Your First Email](./first-email)
+
+
+# Troubleshooting
+
+
+
+# Troubleshooting
+
+> Common issues and how to resolve them
+
+***
+
+## Connection Issues
+
+### "Connection refused" on port 587
+
+1. Check your firewall allows outbound port 587
+2. Verify the hostname: `smtp.north-pipe.ca`
+3. Test with: `telnet smtp.north-pipe.ca 587`
+
+***
+
+## Authentication Errors
+
+*Content pending*
+
+***
+
+## Delivery Problems
+
+*Content pending*
+
+***
+
+## Rate Limiting
+
+*Content pending*
+
+
+# DNS Setup Guide
+
+
+
+# DNS Setup Guide
+
+> Configure SPF, DKIM, and DMARC for optimal deliverability
+
+***
+
+## Overview
+
+*Content pending*
+
+***
+
+## SPF Record
+
+*Content pending*
+
+***
+
+## DKIM Record
+
+*Content pending*
+
+***
+
+## DMARC Record
+
+*Content pending*
+
+***
+
+## Verification
+
+*Content pending*
+
+
+# Node.js Integration
+
+
+
+# Node.js Integration
+
+> Send emails from Node.js applications
+
+***
+
+## Using Nodemailer
+
+*Content pending*
+
+***
+
+## Configuration
+
+*Content pending*
+
+***
+
+## Example Code
+
+*Content pending*
+
+***
+
+## Error Handling
+
+*Content pending*
+
+
+# Python Integration
+
+
+
+# Python Integration
+
+> Send emails from Python applications
+
+***
+
+## Using smtplib
+
+*Content pending*
+
+***
+
+## Using Django
+
+*Content pending*
+
+***
+
+## Using Flask-Mail
+
+*Content pending*
+
+***
+
+## Example Code
+
+*Content pending*
+
+
+# SMTP Configuration
+
+
+
+# SMTP Configuration
+
+> Connect to NorthRelay via SMTP
+
+***
+
+## SMTP Settings
+
+*Content pending*
+
+***
+
+## Authentication
+
+*Content pending*
+
+***
+
+## TLS/SSL
+
+*Content pending*
+
+***
+
+## Testing Your Connection
+
+*Content pending*
+
+
+# WordPress Integration
+
+
+
+# WordPress Integration
+
+> Send WordPress emails through NorthRelay
+
+***
+
+## Prerequisites
+
+*Content pending*
+
+***
+
+## Using WP Mail SMTP Plugin
+
+*Content pending*
+
+***
+
+## Configuration
+
+*Content pending*
+
+***
+
+## Testing
+
+*Content pending*
+
+
+# Acceptable Use Policy
+
+
+
+# Acceptable Use Policy
+
+> What you can and cannot send through NorthRelay
+
+***
+
+## Permitted Use
+
+NorthRelay is designed for **transactional email** - messages triggered by user actions:
+
+* Account notifications
+* Password resets
+* Order confirmations
+* Shipping updates
+* Two-factor authentication codes
+
+***
+
+## Prohibited Content
+
+The following are strictly prohibited:
+
+* Unsolicited bulk email (spam)
+* Purchased or rented email lists
+* Phishing or fraudulent content
+* Malware distribution
+* Illegal content
+
+***
+
+## Spam Policy
+
+We have a zero-tolerance policy for spam. Accounts found sending spam will be immediately suspended without refund.
+
+***
+
+## Enforcement
+
+Violations result in:
+
+1. **First offense:** Warning and temporary rate limit
+2. **Second offense:** 24-hour suspension
+3. **Third offense:** Permanent account termination
+
+
+# Privacy Policy
+
+
+
+# Privacy Policy
+
+> NorthRelay Privacy Policy
+
+***
+
+*Legal content pending review*
+
+
+# Terms of Service
+
+
+
+# Terms of Service
+
+> NorthRelay Terms of Service
+
+***
+
+*Legal content pending review*
