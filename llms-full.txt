@@ -379,7 +379,7 @@ NorthRelay issues two types of API keys, distinguished by prefix:
 | Prefix     | Environment | Behavior                                                |
 | ---------- | ----------- | ------------------------------------------------------- |
 | `nr_live_` | Production  | Sends real emails through your configured delivery pool |
-| `nr_test_` | Sandbox     | Simulates sending without delivering; charges no quota  |
+| `nr_test_` | Test        | Simulates sending without delivering; charges no quota  |
 
 Both key types authenticate against the same endpoints. Use `nr_test_` keys during development and integration testing to avoid consuming your monthly quota.
 
@@ -882,13 +882,14 @@ DELETE /contacts/lists/{id}/contacts
 
 Custom sending domains let you send emails from your own domain (e.g., `hello@yourdomain.com`) instead of a NorthRelay system subdomain. Custom domains require proper DNS configuration for SPF, DKIM, and DMARC.
 
-**Tier requirement:** Custom domains are available on Startup ($29/mo) and above. Sandbox and Micro tiers cannot add custom domains.
+**Tier requirement:** Custom domains are available on Pro ($19/mo) and above. Free, Starter, and Micro tiers cannot add custom domains.
 
 | Tier       | Custom Domain Limit |
 | ---------- | ------------------- |
-| Sandbox    | 0                   |
+| Free       | 0                   |
+| Starter    | 0                   |
 | Micro      | 0                   |
-| Startup    | 1                   |
+| Pro        | 1                   |
 | Scale      | 5                   |
 | Enterprise | Unlimited           |
 
@@ -1225,7 +1226,7 @@ API keys use two prefixes:
 | Prefix     | Environment | Purpose                                                            |
 | ---------- | ----------- | ------------------------------------------------------------------ |
 | `nr_live_` | Production  | Sends real emails through your configured pool                     |
-| `nr_test_` | Sandbox     | Simulates sends without delivering; useful for integration testing |
+| `nr_test_` | Test        | Simulates sends without delivering; useful for integration testing |
 
 Create and manage keys in **Dashboard > Settings > API Keys**. See the [Authentication](/api-reference/authentication) page for full details.
 
@@ -1235,9 +1236,10 @@ Rate limits are enforced per-account based on your plan tier. Limits are express
 
 | Tier       | Monthly Quota | Price  | Pool      |
 | ---------- | ------------- | ------ | --------- |
-| Sandbox    | 3,000         | Free   | Shared    |
-| Micro      | 10,000        | $5/mo  | Shared    |
-| Startup    | 50,000        | $29/mo | Isolated  |
+| Free       | 3,000         | Free   | Shared    |
+| Starter    | 10,000        | $5/mo  | Shared    |
+| Micro      | 25,000        | $9/mo  | Shared    |
+| Pro        | 50,000        | $19/mo | Isolated  |
 | Scale      | 150,000       | $65/mo | Isolated  |
 | Enterprise | 200,000       | Custom | Dedicated |
 
@@ -1490,7 +1492,7 @@ Auto-generated from `prisma/schema.prisma`. This page documents the database mod
 | `quotaUsed`               | `Int`                     | Yes      | 0       |                                     |
 | `quotaResetAt`            | `DateTime`                | Yes      | now(    |                                     |
 | `poolType`                | `PoolType`                | Yes      | Shared  |                                     |
-| `planTier`                | `PlanTier`                | Yes      | Sandbox |                                     |
+| `planTier`                | `PlanTier`                | Yes      | Free    |                                     |
 | `role`                    | `user_role`               | Yes      | USER    |                                     |
 | `accountType`             | `account_type`            | Yes      | USER    | Column: `account_type`              |
 | `status`                  | `user_status`             | Yes      | ACTIVE  |                                     |
@@ -2730,9 +2732,10 @@ Auto-generated from `prisma/schema.prisma`. This page documents the database mod
 
 | Value        |
 | ------------ |
-| `Sandbox`    |
+| `Free`       |
+| `Starter`    |
 | `Micro`      |
-| `Startup`    |
+| `Pro`        |
 | `Scale`      |
 | `Enterprise` |
 
@@ -3858,7 +3861,7 @@ Variables use Handlebars-style double-brace syntax: `{{variable_name}}`.
 
 Webhooks deliver real-time HTTP POST notifications to your server when email events occur (delivery, bounce, open, click, etc.). Use webhooks to update your application state, trigger workflows, or monitor deliverability.
 
-**Tier requirement:** Webhooks are available on Startup ($29/mo) and above.
+**Tier requirement:** Webhooks are available on Pro ($19/mo) and above.
 
 ## Event Types
 
@@ -4218,23 +4221,23 @@ Yes. You can upgrade or downgrade your plan at any time from **Dashboard > Billi
 
 ### Is my billing prorated when I upgrade?
 
-Yes. When you upgrade mid-cycle, you are charged the prorated difference for the remaining days in your billing period. For example, if you upgrade from Micro ($5/mo) to Startup ($29/mo) halfway through your cycle, you pay approximately $12 for the remaining half-month.
+Yes. When you upgrade mid-cycle, you are charged the prorated difference for the remaining days in your billing period. For example, if you upgrade from Micro ($5/mo) to Pro ($19/mo) halfway through your cycle, you pay approximately $7 for the remaining half-month.
 
 ### Is my billing prorated when I downgrade?
 
 No. Downgrades take effect at the end of your current billing cycle. You are not refunded for the remaining days on your current plan, but you retain full access to your current tier's features until the cycle ends.
 
-### What happens to my custom domains if I downgrade below Startup?
+### What happens to my custom domains if I downgrade below Pro?
 
-Custom domains are a Startup+ feature. If you downgrade to Micro or Sandbox:
+Custom domains are a Pro+ feature. If you downgrade to Micro or Free:
 
 * Your custom domains are **deactivated** (not deleted) at the end of the billing cycle
 * Emails will send from your NorthRelay system subdomain instead
 * Your domain configuration is preserved -- if you upgrade again, your domains reactivate without needing to re-verify DNS
 
-### What happens to my webhooks if I downgrade below Startup?
+### What happens to my webhooks if I downgrade below Pro?
 
-Webhooks are a Startup+ feature. If you downgrade:
+Webhooks are a Pro+ feature. If you downgrade:
 
 * Webhook endpoints are **paused** at the end of the billing cycle
 * No events are delivered while paused
@@ -4289,7 +4292,7 @@ If a payment fails:
 
 1. You receive an email notification
 2. Stripe automatically retries after 3 days, then again after 5 days
-3. If all retries fail, your account is downgraded to the Sandbox (free) tier
+3. If all retries fail, your account is downgraded to the Free tier
 4. You can resolve it at any time by updating your payment method and retrying
 
 No data is lost during a payment failure. Your account, domains, templates, and contacts are all preserved.
@@ -4316,9 +4319,9 @@ Email [support@northrelay.ca](mailto:support@northrelay.ca) with your account em
 
 ## Free Tier
 
-### What are the Sandbox tier limitations?
+### What are the Free tier limitations?
 
-The Sandbox (free) tier includes:
+The Free tier includes:
 
 * 3,000 emails per month
 * Shared IP pool (shared with other free and Micro tier senders)
@@ -4327,11 +4330,11 @@ The Sandbox (free) tier includes:
 * 5 templates, 1 contact list
 * No webhooks or team features
 
-There is no time limit on the Sandbox tier. You can use it indefinitely.
+There is no time limit on the Free tier. You can use it indefinitely.
 
 ### Do I need a credit card for the free tier?
 
-No. The Sandbox tier requires no credit card and no payment information.
+No. The Free tier requires no credit card and no payment information.
 
 ## Enterprise
 
@@ -4348,7 +4351,7 @@ Enterprise pricing is custom based on your requirements:
 
 ### Can I get a dedicated IP on a non-Enterprise plan?
 
-Dedicated IPs are only available on the Enterprise tier. Startup and Scale tiers use the isolated pool, which provides strong reputation protection without a dedicated IP. For most senders, the isolated pool delivers equivalent results.
+Dedicated IPs are only available on the Enterprise tier. Pro and Scale tiers use the isolated pool, which provides strong reputation protection without a dedicated IP. For most senders, the isolated pool delivers equivalent results.
 
 ### Do you offer non-profit or startup discounts?
 
@@ -4457,7 +4460,7 @@ If a payment fails:
 1. NorthRelay sends an email notification to your account email
 2. The invoice status shows as **Failed** in your dashboard
 3. Stripe automatically retries the charge after 3 days, then again after 5 days
-4. If all retries fail, your account may be downgraded to the Sandbox tier
+4. If all retries fail, your account may be downgraded to the Free tier
 
 To resolve a failed payment:
 
@@ -4489,52 +4492,65 @@ NorthRelay offers five tiers designed to match your sending volume and feature n
 
 ## Plan Comparison
 
-| Feature              | Sandbox | Micro  | Startup   | Scale     | Enterprise |
-| -------------------- | ------- | ------ | --------- | --------- | ---------- |
-| **Price**            | Free    | $5/mo  | $29/mo    | $65/mo    | Custom     |
-| **Emails/Month**     | 3,000   | 10,000 | 50,000    | 150,000   | 200,000+   |
-| **IP Pool**          | Shared  | Shared | Isolated  | Isolated  | Dedicated  |
-| **Custom Domains**   | --      | --     | Yes       | Yes       | Yes        |
-| **Inbox Access**     | Yes     | Yes    | Yes       | Yes       | Yes        |
-| **Inbox Storage**    | 100 MB  | 500 MB | 5 GB      | 25 GB     | 50 GB      |
-| **Webhooks**         | --      | --     | Yes       | Yes       | Yes        |
-| **Team Members**     | --      | --     | --        | Yes       | Yes        |
-| **API Access**       | Yes     | Yes    | Yes       | Yes       | Yes        |
-| **Templates**        | 5       | 25     | Unlimited | Unlimited | Unlimited  |
-| **Contact Lists**    | 1       | 5      | Unlimited | Unlimited | Unlimited  |
-| **Priority Support** | --      | --     | --        | --        | Yes        |
-| **Dedicated IPs**    | --      | --     | --        | --        | Yes        |
-| **Custom SLA**       | --      | --     | --        | --        | Yes        |
+| Feature              | Free   | Starter | Micro  | Pro       | Scale     | Enterprise |
+| -------------------- | ------ | ------- | ------ | --------- | --------- | ---------- |
+| **Price**            | Free   | $5/mo   | $9/mo  | $19/mo    | $65/mo    | Custom     |
+| **Emails/Month**     | 3,000  | 10,000  | 25,000 | 50,000    | 150,000   | 200,000+   |
+| **IP Pool**          | Shared | Shared  | Shared | Isolated  | Isolated  | Dedicated  |
+| **Custom Domains**   | --     | --      | --     | Yes       | Yes       | Yes        |
+| **Inbox Access**     | --     | Yes     | Yes    | Yes       | Yes       | Yes        |
+| **Inbox Storage**    | --     | 100 MB  | 500 MB | 5 GB      | 25 GB     | 50 GB      |
+| **Webhooks**         | --     | --      | --     | Yes       | Yes       | Yes        |
+| **Team Members**     | --     | --      | --     | --        | Yes       | Yes        |
+| **API Access**       | Yes    | Yes     | Yes    | Yes       | Yes       | Yes        |
+| **Templates**        | 5      | 25      | 25     | Unlimited | Unlimited | Unlimited  |
+| **Contact Lists**    | 1      | 5       | 5      | Unlimited | Unlimited | Unlimited  |
+| **Priority Support** | --     | --      | --     | --        | --        | Yes        |
+| **Dedicated IPs**    | --     | --      | --     | --        | --        | Yes        |
+| **Custom SLA**       | --     | --      | --     | --        | --        | Yes        |
 
-## Sandbox (Free)
+## Free
 
-The Sandbox tier is for testing and evaluation. No credit card required.
+The Free tier is for testing and evaluation. No credit card required.
 
 * **3,000 emails per month** -- enough to test your integration
 * **Shared IP pool** -- your emails share an IP with other free-tier senders
 * Sends from a NorthRelay system subdomain (`yourname.north-pipe.ca`)
-* Basic inbox access with 100 MB storage
+* No inbox access
 * Full API access with 5 templates and 1 contact list
 * No custom domains, webhooks, or team features
 
 **Best for:** Developers evaluating NorthRelay, personal projects, proof-of-concept integrations.
 
-## Micro ($5/month)
+## Starter ($5/month)
 
-The Micro tier provides a cleaner sending environment at a low cost. It acts as the gateway tier -- better than free, with a clear upgrade path.
+The Starter tier adds inbox access at low cost.
 
 * **10,000 emails per month**
-* **Shared IP pool** -- same pool as Sandbox but with better rate limits
+* **Shared IP pool** -- same pool as Free
 * Sends from a NorthRelay system subdomain (no custom domains)
-* Inbox access with 500 MB storage
+* Inbox access with 100 MB storage
 * 25 templates and 5 contact lists
 * No custom domains, webhooks, or team features
 
 **Best for:** Small projects, low-volume transactional email, developers who need more than the free tier.
 
-## Startup ($29/month)
+## Micro ($9/month)
 
-The Startup tier is the first tier with full feature access. It unlocks custom domains and the isolated IP pool, which is the core NorthRelay differentiator.
+The Micro tier provides a cleaner sending environment at a low cost. It acts as the gateway tier -- better than free, with a clear upgrade path.
+
+* **25,000 emails per month**
+* **Shared IP pool** -- cleaner IP with better rate limits
+* Sends from a NorthRelay system subdomain (no custom domains)
+* Inbox access with 500 MB storage
+* 25 templates and 5 contact lists
+* No custom domains, webhooks, or team features
+
+**Best for:** Growing projects, campaigns, developers who need more volume and a cleaner IP.
+
+## Pro ($19/month)
+
+The Pro tier is the first tier with full feature access. It unlocks custom domains and the isolated IP pool, which is the core NorthRelay differentiator.
 
 * **50,000 emails per month**
 * **Isolated IP pool** -- your emails route through a physically separate IP, protected from other senders' reputation
@@ -4551,7 +4567,7 @@ The Startup tier is the first tier with full feature access. It unlocks custom d
 The Scale tier adds higher volume and team collaboration.
 
 * **150,000 emails per month**
-* **Isolated IP pool** -- same protected infrastructure as Startup
+* **Isolated IP pool** -- same protected infrastructure as Pro
 * **Custom domains** with full authentication
 * **Webhooks** for delivery tracking
 * **Team members** -- invite colleagues with role-based access
@@ -4583,14 +4599,14 @@ The Enterprise tier provides dedicated infrastructure and white-glove support.
 
 NorthRelay's core differentiator is physical IP separation between tiers. This is the Two-Pool System.
 
-### Shared Pool (Sandbox + Micro)
+### Shared Pool (Free + Starter + Micro)
 
 * Emails route through a shared public IP
 * IP reputation is influenced by all senders on the pool
 * Vulnerable to the "noisy neighbor" problem -- if another sender on the pool behaves badly, it can affect your deliverability
 * HELO hostname: `shared.north-pipe.ca`
 
-### Isolated Pool (Startup + Scale)
+### Isolated Pool (Pro + Scale)
 
 * Emails route through a separate, dedicated IP via WireGuard tunnel
 * IP reputation is isolated from the shared pool
@@ -4610,13 +4626,13 @@ For a deeper explanation, see the [Two-Pool System](/docs/features/two-pool-syst
 
 Some features are gated by tier to ensure quality of service:
 
-| Feature          | Minimum Tier  | Why                                                     |
-| ---------------- | ------------- | ------------------------------------------------------- |
-| Custom domains   | Startup ($29) | Requires isolated IP pool for proper DKIM/SPF alignment |
-| Webhooks         | Startup ($29) | Event delivery infrastructure has per-account overhead  |
-| Team members     | Scale ($65)   | Multi-user access control and audit logging             |
-| Dedicated IPs    | Enterprise    | Physical IP allocation and management                   |
-| Priority support | Enterprise    | Dedicated support staff assignment                      |
+| Feature          | Minimum Tier | Why                                                     |
+| ---------------- | ------------ | ------------------------------------------------------- |
+| Custom domains   | Pro ($19)    | Requires isolated IP pool for proper DKIM/SPF alignment |
+| Webhooks         | Pro ($19)    | Event delivery infrastructure has per-account overhead  |
+| Team members     | Scale ($65)  | Multi-user access control and audit logging             |
+| Dedicated IPs    | Enterprise   | Physical IP allocation and management                   |
+| Priority support | Enterprise   | Dedicated support staff assignment                      |
 
 ## How to Upgrade
 
@@ -4640,7 +4656,7 @@ Downgrades take effect at the end of your current billing cycle. You keep your c
 ## Related
 
 * [Two-Pool System](/docs/features/two-pool-system) for IP pool details
-* [Domain Verification](/docs/features/domain-verification) for custom domain setup (Startup+)
+* [Domain Verification](/docs/features/domain-verification) for custom domain setup (Pro+)
 * [Billing FAQ](/docs/billing/faq) for common billing questions
 * [Invoices](/docs/billing/invoices) for payment and receipt management
 
@@ -4827,11 +4843,11 @@ Verifying your custom domain allows you to send email from your own addresses (e
 
 ## Prerequisites
 
-* **Startup tier or higher** ($29/mo) -- custom domains are not available on Sandbox or Micro plans
+* **Pro tier or higher** ($19/mo) -- custom domains are not available on Free, Starter, or Micro plans
 * Access to your domain's DNS management (e.g., Cloudflare, Route 53, GoDaddy)
 * A domain you own and control
 
-Sandbox and Micro tier users send from NorthRelay system subdomains on `north-pipe.ca`. To use your own domain, [upgrade to Startup or higher](/docs/billing/plans).
+Free, Starter, and Micro tier users send from NorthRelay system subdomains on `north-pipe.ca`. To use your own domain, [upgrade to Pro or higher](/docs/billing/plans).
 
 ## Why Verify Your Domain?
 
@@ -5169,10 +5185,10 @@ Incidents automatically resolve when the triggering metric returns below its war
 
 When you send email through NorthRelay, your messages exit through one of two **IP pools**:
 
-| Pool         | Tiers          | Exit IP           | Use Case                      |
-| ------------ | -------------- | ----------------- | ----------------------------- |
-| **Shared**   | Sandbox, Micro | VPS 1 (Public IP) | Development, low-volume       |
-| **Isolated** | Startup, Scale | VPS 2 (WireGuard) | Production, business-critical |
+| Pool         | Tiers                | Exit IP           | Use Case                      |
+| ------------ | -------------------- | ----------------- | ----------------------------- |
+| **Shared**   | Free, Starter, Micro | VPS 1 (Public IP) | Development, low-volume       |
+| **Isolated** | Pro, Scale           | VPS 2 (WireGuard) | Production, business-critical |
 
 ***
 
@@ -5182,7 +5198,7 @@ The Shared Pool is perfect for:
 
 * Development and testing
 * Low-volume transactional emails
-* Startups validating product-market fit
+* Teams validating product-market fit
 
 **Trade-off:** You share IP reputation with other senders. If someone else on the pool sends spam, it could affect your deliverability.
 
@@ -5204,12 +5220,12 @@ Your Email → NorthRelay → WireGuard Tunnel → Isolated Gateway → Gmail/Ou
 
 ## Which Pool Is Right for You?
 
-| Scenario                   | Recommended Pool   |
-| -------------------------- | ------------------ |
-| Just testing               | Shared (Sandbox)   |
-| Side project               | Shared (Micro)     |
-| SaaS with paying customers | Isolated (Startup) |
-| Enterprise/High volume     | Isolated (Scale)   |
+| Scenario                   | Recommended Pool |
+| -------------------------- | ---------------- |
+| Just testing               | Shared (Free)    |
+| Side project               | Shared (Micro)   |
+| SaaS with paying customers | Isolated (Pro)   |
+| Enterprise/High volume     | Isolated (Scale) |
 
 ***
 
@@ -5448,7 +5464,7 @@ Get up and running with NorthRelay in 5 minutes. This guide walks you through cr
 3. Check your inbox for a 6-digit verification code
 4. Enter the code on the verification page (code expires after 15 minutes)
 
-Your account starts on the **Sandbox** tier with 3,000 emails per month at no cost.
+Your account starts on the **Free** tier with 3,000 emails per month at no cost.
 
 ## Step 2: Get Your SMTP Credentials
 
@@ -5531,9 +5547,10 @@ pip install northrelay
 
 | Tier       | Price  | Quota/Month | Pool      | Custom Domains |
 | ---------- | ------ | ----------- | --------- | -------------- |
-| Sandbox    | $0     | 3,000       | Shared    | No             |
-| Micro      | $5     | 10,000      | Shared    | No             |
-| Startup    | $29    | 50,000      | Isolated  | Yes            |
+| Free       | $0     | 3,000       | Shared    | No             |
+| Starter    | $5     | 10,000      | Shared    | No             |
+| Micro      | $9     | 25,000      | Shared    | No             |
+| Pro        | $19    | 50,000      | Isolated  | Yes            |
 | Scale      | $65    | 150,000     | Isolated  | Yes            |
 | Enterprise | Custom | 200,000+    | Dedicated | Yes            |
 
@@ -5575,8 +5592,8 @@ This is the "noisy neighbor" problem - your legitimate business emails end up in
 
 NorthRelay uses a **Two-Pool System**:
 
-1. **Shared Pool** - For development and low-volume senders (Sandbox & Micro tiers)
-2. **Isolated Pool** - Dedicated IP reputation for paid users (Startup & Scale tiers)
+1. **Shared Pool** - For development and low-volume senders (Free, Starter & Micro tiers)
+2. **Isolated Pool** - Dedicated IP reputation for paid users (Pro & Scale tiers)
 
 When you upgrade to an Isolated Pool, your emails exit through a **completely separate IP address**. Your reputation is yours alone.
 
@@ -5680,7 +5697,7 @@ See the full [DNS Setup Guide](../guides/dns-setup) for step-by-step instruction
 
 ### Domain not verified
 
-You must verify domain ownership before sending from a custom domain (Startup tier and above).
+You must verify domain ownership before sending from a custom domain (Pro tier and above).
 
 1. Go to **Dashboard → Domains**
 2. Add your domain and follow the verification steps
@@ -5716,9 +5733,10 @@ You have hit your plan's sending quota.
 
 | Tier       | Quota/Month |
 | ---------- | ----------- |
-| Sandbox    | 3,000       |
-| Micro      | 10,000      |
-| Startup    | 50,000      |
+| Free       | 3,000       |
+| Starter    | 10,000      |
+| Micro      | 25,000      |
+| Pro        | 50,000      |
 | Scale      | 150,000     |
 | Enterprise | 200,000+    |
 
@@ -5897,7 +5915,7 @@ v=DMARC1; p=quarantine; sp=quarantine; rua=mailto:dmarc@yourdomain.com; ruf=mail
 
 ## MX Record (Inbox Users)
 
-If you are on the **Startup** tier or above and want to receive email through NorthRelay's inbox, add an MX record pointing to NorthRelay's mailbox server.
+If you are on the **Pro** tier or above and want to receive email through NorthRelay's inbox, add an MX record pointing to NorthRelay's mailbox server.
 
 | Field         | Value                |
 | ------------- | -------------------- |
@@ -6750,10 +6768,10 @@ The distinction between `SMTP_SECURE` and `SMTP_TLS` varies by library. `SMTP_SE
 
 NorthRelay uses two IP pools for sending. Your pool is determined by your plan tier:
 
-| Pool         | Tiers                      | EHLO Hostname             |
-| ------------ | -------------------------- | ------------------------- |
-| **Shared**   | Sandbox, Micro             | `shared.north-pipe.ca`    |
-| **Isolated** | Startup, Scale, Enterprise | `sovereign.north-pipe.ca` |
+| Pool         | Tiers                  | EHLO Hostname             |
+| ------------ | ---------------------- | ------------------------- |
+| **Shared**   | Free, Starter, Micro   | `shared.north-pipe.ca`    |
+| **Isolated** | Pro, Scale, Enterprise | `sovereign.north-pipe.ca` |
 
 This is handled automatically by NorthRelay's routing infrastructure. You do not need to configure anything differently — all users connect to the same `smtp.north-pipe.ca` host and NorthRelay routes your email through the appropriate pool.
 
@@ -8704,10 +8722,10 @@ curl -u admin:TOKEN -X POST http://localhost:8080/api/principal \
 
 The outbound relay routes emails to different relay VPSes based on the user's pool assignment:
 
-| User Tier                  | Pool Type | Route                   | Relay VPS      |
-| -------------------------- | --------- | ----------------------- | -------------- |
-| Sandbox, Micro             | Shared    | WireGuard `10.0.1.2:25` | `76.13.26.53`  |
-| Startup, Scale, Enterprise | Isolated  | WireGuard `10.0.2.2:25` | `76.13.27.101` |
+| User Tier              | Pool Type | Route                   | Relay VPS      |
+| ---------------------- | --------- | ----------------------- | -------------- |
+| Free, Starter, Micro   | Shared    | WireGuard `10.0.1.2:25` | `76.13.26.53`  |
+| Pro, Scale, Enterprise | Isolated  | WireGuard `10.0.2.2:25` | `76.13.27.101` |
 
 Routing is enforced by HTTP headers injected by the API:
 
@@ -9552,7 +9570,7 @@ await client.contacts.delete('contact_id');
 
 ### Domains
 
-Manage verified sending domains (Startup+ tier required).
+Manage verified sending domains (Pro+ tier required).
 
 ```typescript
 const domain = await client.domains.create({ hostname: 'mail.yourdomain.com' });
