@@ -4,7 +4,7 @@
 
 # Welcome to NorthRelay [#welcome-to-northrelay]
 
-NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery without the risks of shared IP reputation.
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
 
 ## Quick Links [#quick-links]
 
@@ -28,18 +28,19 @@ NorthRelay is a **sovereign SMTP infrastructure** designed for developers who ne
 
 ## Why NorthRelay? [#why-northrelay]
 
-### The "Noisy Neighbor" Problem [#the-noisy-neighbor-problem]
+### The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
 
-When you use traditional email services, you share IP addresses with thousands of other senders. If one of them sends spam, **your emails suffer too**.
+Most email services put thousands of senders on the same IP addresses and let anyone send from anything. If one of them sends spam, **your emails suffer too**.
 
 ### The NorthRelay Solution [#the-northrelay-solution]
 
-Our **Two-Pool System** gives you control:
+Every NorthRelay message leaves from **one protected sending IP** — and we keep it clean so you don't have to:
 
-* **Shared Pool** — For development and low-volume senders (Free & $5/mo)
-* **Isolated Pool** — Dedicated reputation for production apps ($29+/mo)
+* **Verified senders only** — you can only send from domains you have verified, so nobody can pollute the IP with spoofed mail
+* **Automatic hygiene** — one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
+* **Monitored every hour** — a delivery canary confirms mail is landing with SPF, DKIM and DMARC passing
 
-No code changes needed to upgrade. Your routing switches automatically when you change tiers.
+Plans differ by quota and features, never by IP. Upgrading changes your limits immediately with no code or DNS changes. See [Sending Infrastructure](/docs/features/two-pool-system).
 
 ## Integration Options [#integration-options]
 
@@ -376,10 +377,10 @@ All NorthRelay API requests require authentication. The primary method is Bearer
 
 NorthRelay issues two types of API keys, distinguished by prefix:
 
-| Prefix     | Environment | Behavior                                                |
-| ---------- | ----------- | ------------------------------------------------------- |
-| `nr_live_` | Production  | Sends real emails through your configured delivery pool |
-| `nr_test_` | Test        | Simulates sending without delivering; charges no quota  |
+| Prefix     | Environment | Behavior                                               |
+| ---------- | ----------- | ------------------------------------------------------ |
+| `nr_live_` | Production  | Sends real emails                                      |
+| `nr_test_` | Test        | Simulates sending without delivering; charges no quota |
 
 Both key types authenticate against the same endpoints. Use `nr_test_` keys during development and integration testing to avoid consuming your monthly quota.
 
@@ -1225,23 +1226,22 @@ API keys use two prefixes:
 
 | Prefix     | Environment | Purpose                                                            |
 | ---------- | ----------- | ------------------------------------------------------------------ |
-| `nr_live_` | Production  | Sends real emails through your configured pool                     |
+| `nr_live_` | Production  | Sends real emails                                                  |
 | `nr_test_` | Test        | Simulates sends without delivering; useful for integration testing |
 
 Create and manage keys in **Dashboard > Settings > API Keys**. See the [Authentication](/api-reference/authentication) page for full details.
 
 ## Rate Limits [#rate-limits]
 
-Rate limits are enforced per-account based on your plan tier. Limits are expressed as monthly email quotas:
+Rate limits are enforced per-account based on your plan tier. Limits are expressed as daily email quotas:
 
-| Tier       | Monthly Quota | Price  | Pool      |
-| ---------- | ------------- | ------ | --------- |
-| Free       | 3,000         | Free   | Shared    |
-| Starter    | 10,000        | $5/mo  | Shared    |
-| Micro      | 25,000        | $9/mo  | Shared    |
-| Pro        | 50,000        | $19/mo | Isolated  |
-| Scale      | 150,000       | $65/mo | Isolated  |
-| Enterprise | 200,000       | Custom | Dedicated |
+| Tier    | Daily Quota | Price  |
+| ------- | ----------- | ------ |
+| Free    | 100         | Free   |
+| Starter | 500         | $5/mo  |
+| Micro   | 1,000       | $9/mo  |
+| Pro     | 10,000      | $19/mo |
+| Scale   | 50,000      | $65/mo |
 
 When you exceed your quota, the API returns a `429` status with the `RATE_LIMIT_EXCEEDED` error code. The response includes a `Retry-After` header indicating when you can resume sending.
 
@@ -4323,10 +4323,9 @@ Email [support@northrelay.ca](mailto:support@northrelay.ca) with your account em
 
 The Free tier includes:
 
-* 3,000 emails per month
-* Shared IP pool (shared with other free and Micro tier senders)
+* 100 emails per day
 * Sends from a NorthRelay system subdomain only (no custom domains)
-* 100 MB inbox storage
+* No inbox access
 * 5 templates, 1 contact list
 * No webhooks or team features
 
@@ -4342,16 +4341,15 @@ No. The Free tier requires no credit card and no payment information.
 
 Enterprise pricing is custom based on your requirements:
 
-* **Volume:** Monthly sending volume above 200,000 emails
-* **Infrastructure:** Dedicated IPs, custom HELO hostnames
+* **Volume:** Sending limits above the Scale tier
 * **Support:** Priority support with guaranteed response times, dedicated account manager
 * **Compliance:** Custom SLA, data processing agreements, security reviews
 
 [Contact sales](mailto:sales@northrelay.ca) for a quote.
 
-### Can I get a dedicated IP on a non-Enterprise plan? [#can-i-get-a-dedicated-ip-on-a-non-enterprise-plan]
+### Can I get a dedicated IP? [#can-i-get-a-dedicated-ip]
 
-Dedicated IPs are only available on the Enterprise tier. Pro and Scale tiers use the isolated pool, which provides strong reputation protection without a dedicated IP. For most senders, the isolated pool delivers equivalent results.
+No. NorthRelay sends all mail from one protected IP and does not offer dedicated IPs on any plan. For typical volumes a warm, continuously monitored IP with a strict sender policy (verified domains only, one-click unsubscribe, automatic bounce and complaint suppression) outperforms a cold dedicated IP, which needs weeks of careful warm-up before mailbox providers trust it. See [Sending Infrastructure](/docs/features/two-pool-system).
 
 ### Do you offer non-profit or startup discounts? [#do-you-offer-non-profit-or-startup-discounts]
 
@@ -4492,29 +4490,26 @@ NorthRelay offers five tiers designed to match your sending volume and feature n
 
 ## Plan Comparison [#plan-comparison]
 
-| Feature              | Free   | Starter | Micro  | Pro       | Scale     | Enterprise |
-| -------------------- | ------ | ------- | ------ | --------- | --------- | ---------- |
-| **Price**            | Free   | $5/mo   | $9/mo  | $19/mo    | $65/mo    | Custom     |
-| **Emails/Month**     | 3,000  | 10,000  | 25,000 | 50,000    | 150,000   | 200,000+   |
-| **IP Pool**          | Shared | Shared  | Shared | Isolated  | Isolated  | Dedicated  |
-| **Custom Domains**   | --     | --      | --     | Yes       | Yes       | Yes        |
-| **Inbox Access**     | --     | Yes     | Yes    | Yes       | Yes       | Yes        |
-| **Inbox Storage**    | --     | 100 MB  | 500 MB | 5 GB      | 25 GB     | 50 GB      |
-| **Webhooks**         | --     | --      | --     | Yes       | Yes       | Yes        |
-| **Team Members**     | --     | --      | --     | --        | Yes       | Yes        |
-| **API Access**       | Yes    | Yes     | Yes    | Yes       | Yes       | Yes        |
-| **Templates**        | 5      | 25      | 25     | Unlimited | Unlimited | Unlimited  |
-| **Contact Lists**    | 1      | 5       | 5      | Unlimited | Unlimited | Unlimited  |
-| **Priority Support** | --     | --      | --     | --        | --        | Yes        |
-| **Dedicated IPs**    | --     | --      | --     | --        | --        | Yes        |
-| **Custom SLA**       | --     | --      | --     | --        | --        | Yes        |
+| Feature              | Free | Starter | Micro | Pro       | Scale     | Enterprise |
+| -------------------- | ---- | ------- | ----- | --------- | --------- | ---------- |
+| **Price**            | Free | $5/mo   | $9/mo | $19/mo    | $65/mo    | Custom     |
+| **Emails/Day**       | 100  | 500     | 1,000 | 10,000    | 50,000    | Custom     |
+| **Custom Domains**   | --   | --      | --    | Yes       | Yes       | Yes        |
+| **Inbox Access**     | --   | Yes     | Yes   | Yes       | Yes       | Yes        |
+| **Inbox Storage**    | --   | 500 MB  | 1 GB  | 2 GB      | 5 GB      | Custom     |
+| **Webhooks**         | --   | --      | --    | Yes       | Yes       | Yes        |
+| **Team Members**     | --   | --      | --    | --        | Yes       | Yes        |
+| **API Access**       | Yes  | Yes     | Yes   | Yes       | Yes       | Yes        |
+| **Templates**        | 5    | 25      | 25    | Unlimited | Unlimited | Unlimited  |
+| **Contact Lists**    | 1    | 5       | 5     | Unlimited | Unlimited | Unlimited  |
+| **Priority Support** | --   | --      | --    | --        | --        | Yes        |
+| **Custom SLA**       | --   | --      | --    | --        | --        | Yes        |
 
 ## Free [#free]
 
 The Free tier is for testing and evaluation. No credit card required.
 
-* **3,000 emails per month** -- enough to test your integration
-* **Shared IP pool** -- your emails share an IP with other free-tier senders
+* **100 emails per day** -- enough to test your integration
 * Sends from a NorthRelay system subdomain (`yourname.north-pipe.ca`)
 * No inbox access
 * Full API access with 5 templates and 1 contact list
@@ -4526,10 +4521,9 @@ The Free tier is for testing and evaluation. No credit card required.
 
 The Starter tier adds inbox access at low cost.
 
-* **10,000 emails per month**
-* **Shared IP pool** -- same pool as Free
+* **500 emails per day**
 * Sends from a NorthRelay system subdomain (no custom domains)
-* Inbox access with 100 MB storage
+* Inbox access with 500 MB storage
 * 25 templates and 5 contact lists
 * No custom domains, webhooks, or team features
 
@@ -4537,26 +4531,24 @@ The Starter tier adds inbox access at low cost.
 
 ## Micro ($9/month) [#micro-9month]
 
-The Micro tier provides a cleaner sending environment at a low cost. It acts as the gateway tier -- better than free, with a clear upgrade path.
+The Micro tier adds more volume at a low cost. It acts as the gateway tier -- better than free, with a clear upgrade path.
 
-* **25,000 emails per month**
-* **Shared IP pool** -- cleaner IP with better rate limits
+* **1,000 emails per day**
 * Sends from a NorthRelay system subdomain (no custom domains)
-* Inbox access with 500 MB storage
+* Inbox access with 1 GB storage
 * 25 templates and 5 contact lists
 * No custom domains, webhooks, or team features
 
-**Best for:** Growing projects, campaigns, developers who need more volume and a cleaner IP.
+**Best for:** Growing projects, campaigns, developers who need more volume.
 
 ## Pro ($19/month) [#pro-19month]
 
-The Pro tier is the first tier with full feature access. It unlocks custom domains and the isolated IP pool, which is the core NorthRelay differentiator.
+The Pro tier is the first tier with full feature access. It unlocks custom domains, the core NorthRelay differentiator.
 
-* **50,000 emails per month**
-* **Isolated IP pool** -- your emails route through a physically separate IP, protected from other senders' reputation
+* **10,000 emails per day**
 * **Custom domains** -- send from your own domain with full SPF/DKIM/DMARC alignment
 * **Webhooks** -- receive real-time delivery notifications
-* Inbox access with 5 GB storage
+* Inbox access with 2 GB storage
 * Unlimited templates and contact lists
 * Full diagnostic tools access
 
@@ -4566,12 +4558,11 @@ The Pro tier is the first tier with full feature access. It unlocks custom domai
 
 The Scale tier adds higher volume and team collaboration.
 
-* **150,000 emails per month**
-* **Isolated IP pool** -- same protected infrastructure as Pro
+* **50,000 emails per day**
 * **Custom domains** with full authentication
 * **Webhooks** for delivery tracking
 * **Team members** -- invite colleagues with role-based access
-* Inbox access with 25 GB storage
+* Inbox access with 5 GB storage
 * Unlimited templates and contact lists
 * Full diagnostic tools access
 
@@ -4579,14 +4570,12 @@ The Scale tier adds higher volume and team collaboration.
 
 ## Enterprise (Custom Pricing) [#enterprise-custom-pricing]
 
-The Enterprise tier provides dedicated infrastructure and white-glove support.
+The Enterprise tier provides custom limits and white-glove support.
 
-* **200,000+ emails per month** (custom limits)
-* **Dedicated IP pool** -- your own IP addresses, not shared with any other sender
-* **Dedicated IPs** -- one or more IPs assigned exclusively to your account
+* **Custom sending limits** above the Scale tier
 * **Custom domains** with full authentication
 * **Webhooks** and **team members**
-* Inbox access with 50 GB storage
+* Custom inbox storage
 * **Priority support** with guaranteed response times
 * **Custom SLA** tailored to your requirements
 * Custom onboarding and migration assistance
@@ -4595,44 +4584,24 @@ The Enterprise tier provides dedicated infrastructure and white-glove support.
 
 [Contact sales](mailto:sales@northrelay.ca) for Enterprise pricing.
 
-## Understanding IP Pools [#understanding-ip-pools]
+## Sending infrastructure [#sending-infrastructure]
 
-NorthRelay's core differentiator is physical IP separation between tiers. This is the Two-Pool System.
+All tiers send from the same protected IP (`sovereign.north-pipe.ca`). Plans differ by quota, custom domains, campaigns, inbox size and retention -- never by where your mail comes from.
 
-### Shared Pool (Free + Starter + Micro) [#shared-pool-free--starter--micro]
+What keeps that IP clean is enforced on every message: only verified sender domains are accepted, every campaign carries one-click unsubscribe headers, bounces and complaints are suppressed automatically, and an hourly delivery canary confirms mail is landing with SPF, DKIM and DMARC passing.
 
-* Emails route through a shared public IP
-* IP reputation is influenced by all senders on the pool
-* Vulnerable to the "noisy neighbor" problem -- if another sender on the pool behaves badly, it can affect your deliverability
-* HELO hostname: `shared.north-pipe.ca`
-
-### Isolated Pool (Pro + Scale) [#isolated-pool-pro--scale]
-
-* Emails route through a separate, dedicated IP via WireGuard tunnel
-* IP reputation is isolated from the shared pool
-* Protected from noisy neighbors
-* Consistently higher deliverability
-* HELO hostname: `sovereign.north-pipe.ca`
-
-### Dedicated Pool (Enterprise) [#dedicated-pool-enterprise]
-
-* Your own IP addresses, used only by your account
-* Complete control over IP reputation
-* Custom HELO hostname available
-
-For a deeper explanation, see the [Two-Pool System](/docs/features/two-pool-system) documentation.
+For details, see [Sending Infrastructure](/docs/features/two-pool-system).
 
 ## Feature Gates [#feature-gates]
 
 Some features are gated by tier to ensure quality of service:
 
-| Feature          | Minimum Tier | Why                                                     |
-| ---------------- | ------------ | ------------------------------------------------------- |
-| Custom domains   | Pro ($19)    | Requires isolated IP pool for proper DKIM/SPF alignment |
-| Webhooks         | Pro ($19)    | Event delivery infrastructure has per-account overhead  |
-| Team members     | Scale ($65)  | Multi-user access control and audit logging             |
-| Dedicated IPs    | Enterprise   | Physical IP allocation and management                   |
-| Priority support | Enterprise   | Dedicated support staff assignment                      |
+| Feature          | Minimum Tier | Why                                                        |
+| ---------------- | ------------ | ---------------------------------------------------------- |
+| Custom domains   | Pro ($19)    | Requires domain verification for proper DKIM/SPF alignment |
+| Webhooks         | Pro ($19)    | Event delivery infrastructure has per-account overhead     |
+| Team members     | Scale ($65)  | Multi-user access control and audit logging                |
+| Priority support | Enterprise   | Dedicated support staff assignment                         |
 
 ## How to Upgrade [#how-to-upgrade]
 
@@ -4655,7 +4624,7 @@ Downgrades take effect at the end of your current billing cycle. You keep your c
 
 ## Related [#related]
 
-* [Two-Pool System](/docs/features/two-pool-system) for IP pool details
+* [Sending Infrastructure](/docs/features/two-pool-system) for how your mail is delivered
 * [Domain Verification](/docs/features/domain-verification) for custom domain setup (Pro+)
 * [Billing FAQ](/docs/billing/faq) for common billing questions
 * [Invoices](/docs/billing/invoices) for payment and receipt management
@@ -4830,7 +4799,7 @@ Each step shows a pass/fail status with timing information:
 
 * [Domain Verification](/docs/features/domain-verification) for setting up DNS records
 * [Reputation Monitoring](/docs/features/reputation-monitoring) for ongoing sender health
-* [Two-Pool System](/docs/features/two-pool-system) for understanding IP isolation
+* [Sending Infrastructure](/docs/features/two-pool-system) for how your mail is delivered
 
 
 # Domain Verification
@@ -5015,7 +4984,7 @@ DNS changes can take up to 48 hours to propagate globally. If verification fails
 ## Related [#related]
 
 * [Plans & Pricing](/docs/billing/plans) for tier requirements
-* [Two-Pool System](/docs/features/two-pool-system) for understanding IP isolation
+* [Sending Infrastructure](/docs/features/two-pool-system) for how your mail is delivered
 * [Reputation Monitoring](/docs/features/reputation-monitoring) for tracking domain health
 * [Diagnostic Tools](/docs/features/diagnostic-tools) for DNS validation
 
@@ -5037,7 +5006,7 @@ A high reputation means:
 * Better inbox placement rates
 * Fewer emails landing in spam
 * Higher delivery speeds (less throttling by receivers)
-* Protection of the IP pool you share with other senders
+* Protection of the shared sending IP everyone relies on
 
 ## Reputation Score [#reputation-score]
 
@@ -5167,78 +5136,78 @@ Incidents automatically resolve when the triggering metric returns below its war
 
 * [Diagnostic Tools](/docs/features/diagnostic-tools) for troubleshooting delivery issues
 * [Domain Verification](/docs/features/domain-verification) for setting up proper authentication
-* [Two-Pool System](/docs/features/two-pool-system) for understanding IP isolation and reputation protection
+* [Sending Infrastructure](/docs/features/two-pool-system) for how NorthRelay protects its sending IP
 * [Plans & Pricing](/docs/billing/plans) for tier-specific reputation features
 
 
-# The Two-Pool System
+# Sending Infrastructure
 
 
 
-# The Two-Pool System [#the-two-pool-system]
+# Sending Infrastructure [#sending-infrastructure]
 
-> Understanding Shared vs Isolated IP pools
-
-***
-
-## What Are IP Pools? [#what-are-ip-pools]
-
-When you send email through NorthRelay, your messages exit through one of two **IP pools**:
-
-| Pool         | Tiers                | Exit IP           | Use Case                      |
-| ------------ | -------------------- | ----------------- | ----------------------------- |
-| **Shared**   | Free, Starter, Micro | VPS 1 (Public IP) | Development, low-volume       |
-| **Isolated** | Pro, Scale           | VPS 2 (WireGuard) | Production, business-critical |
+> One clean relay, actively protected, shared by every tier.
 
 ***
 
-## Shared Pool [#shared-pool]
+## One relay for everyone [#one-relay-for-everyone]
 
-The Shared Pool is perfect for:
+Every message you send through NorthRelay — on any plan, from any sender domain — leaves through a single sending relay:
 
-* Development and testing
-* Low-volume transactional emails
-* Teams validating product-market fit
+|                 |                              |
+| --------------- | ---------------------------- |
+| **Hostname**    | `sovereign.north-pipe.ca`    |
+| **IPv4**        | `76.13.27.101`               |
+| **HELO**        | `sovereign.north-pipe.ca`    |
+| **SPF include** | `include:_spf.north-pipe.ca` |
 
-**Trade-off:** You share IP reputation with other senders. If someone else on the pool sends spam, it could affect your deliverability.
-
-***
-
-## Isolated Pool [#isolated-pool]
-
-The Isolated Pool provides **sovereign IP reputation**:
-
-* Your emails exit through a dedicated gateway
-* No "noisy neighbor" risk
-* Premium deliverability for business-critical emails
-
-```
-Your Email → NorthRelay → WireGuard Tunnel → Isolated Gateway → Gmail/Outlook
-```
+You connect to `smtp.north-pipe.ca` (or the REST API); NorthRelay queues your message and hands it to the relay, which signs it with DKIM and delivers it to the recipient's mail server. There is nothing to choose and nothing to configure — the path is the same for every account.
 
 ***
 
-## Which Pool Is Right for You? [#which-pool-is-right-for-you]
+## How we protect its reputation [#how-we-protect-its-reputation]
 
-| Scenario                   | Recommended Pool |
-| -------------------------- | ---------------- |
-| Just testing               | Shared (Free)    |
-| Side project               | Shared (Micro)   |
-| SaaS with paying customers | Isolated (Pro)   |
-| Enterprise/High volume     | Isolated (Scale) |
+A single IP only works if it stays clean. These protections are enforced in code on every message:
+
+* **Verified-From policy** — you can only send from a domain you have added and verified in your dashboard (or a subdomain of one). Requests from any other address are rejected with `403 FORBIDDEN_SENDER` and a message telling you which domain to verify. Nobody can spoof a domain they don't own.
+* **One-click unsubscribe** — every marketing and campaign message carries RFC 8058 `List-Unsubscribe` headers, so recipients can opt out with one click instead of reporting spam.
+* **Bounce and complaint suppression** — hard bounces and spam complaints are added to your suppression list automatically and never mailed again.
+* **Hourly delivery canary** — every hour NorthRelay sends a real message through the full sending path to a monitored mailbox and checks that it arrives with SPF, DKIM and DMARC passing. If it fails or goes stale, our team is alerted.
+* **Full authentication alignment** — the relay signs with DKIM for your verified domain, `include:_spf.north-pipe.ca` covers SPF for IPv4 and IPv6, and both align with DMARC. See [DNS Setup](/docs/guides/dns-setup).
 
 ***
 
-## Upgrading Between Pools [#upgrading-between-pools]
+## What changes between tiers [#what-changes-between-tiers]
 
-Upgrading is instant:
+Plans differ in limits and features, not in where your mail comes from:
 
-1. Go to **Dashboard → Billing**
+| Tier        | Price | Quota/Day | Inbox cap | Retention | Features                          |
+| ----------- | ----- | --------- | --------- | --------- | --------------------------------- |
+| **Free**    | $0    | 100       | 250 MB    | 30 d      | Basic sending                     |
+| **Starter** | $5    | 500       | 500 MB    | 60 d      | + Inbox access                    |
+| **Micro**   | $9    | 1,000     | 1 GB      | 90 d      | + Campaigns, templates, webhooks  |
+| **Pro**     | $19   | 10,000    | 2 GB      | 365 d     | + Custom domains, catch-all, team |
+| **Scale**   | $65   | 50,000    | 5 GB      | 365 d     | High volume                       |
+
+See [Plans & Pricing](/docs/billing/plans) for the full comparison.
+
+***
+
+## Upgrading [#upgrading]
+
+Upgrades take effect immediately:
+
+1. Go to **Dashboard → Settings → Billing**
 2. Select your new tier
 3. Complete payment
-4. Your next email automatically routes through the Isolated Pool
 
-No code changes required - routing is handled automatically based on your account tier.
+Your new quota and features apply to your next message. An upgrade never requires code changes, new credentials or DNS changes — your SMTP settings, API keys and SPF/DKIM records stay exactly as they are.
+
+***
+
+## Previously: the Two-Pool system [#previously-the-two-pool-system]
+
+Until September 2026, NorthRelay routed Free/Starter/Micro accounts through a "Shared" IP and Pro/Scale accounts through an "Isolated" IP. That design was retired in favour of one well-protected IP for everyone: a single warm, monitored relay with a strict sender policy is simpler, easier to defend and delivers at least as well as splitting traffic across two addresses. This page keeps its URL so existing links continue to work.
 
 
 # Send Your First Email
@@ -5464,7 +5433,7 @@ Get up and running with NorthRelay in 5 minutes. This guide walks you through cr
 3. Check your inbox for a 6-digit verification code
 4. Enter the code on the verification page (code expires after 15 minutes)
 
-Your account starts on the **Free** tier with 3,000 emails per month at no cost.
+Your account starts on the **Free** tier with 100 emails per day at no cost.
 
 ## Step 2: Get Your SMTP Credentials [#step-2-get-your-smtp-credentials]
 
@@ -5545,14 +5514,13 @@ pip install northrelay
 
 ## Plans and Quotas [#plans-and-quotas]
 
-| Tier       | Price  | Quota/Month | Pool      | Custom Domains |
-| ---------- | ------ | ----------- | --------- | -------------- |
-| Free       | $0     | 3,000       | Shared    | No             |
-| Starter    | $5     | 10,000      | Shared    | No             |
-| Micro      | $9     | 25,000      | Shared    | No             |
-| Pro        | $19    | 50,000      | Isolated  | Yes            |
-| Scale      | $65    | 150,000     | Isolated  | Yes            |
-| Enterprise | Custom | 200,000+    | Dedicated | Yes            |
+| Tier    | Price | Quota/Day | Custom Domains |
+| ------- | ----- | --------- | -------------- |
+| Free    | $0    | 100       | No             |
+| Starter | $5    | 500       | No             |
+| Micro   | $9    | 1,000     | No             |
+| Pro     | $19   | 10,000    | Yes            |
+| Scale   | $65   | 50,000    | Yes            |
 
 Upgrade anytime from **Dashboard → Billing**.
 
@@ -5561,7 +5529,7 @@ Upgrade anytime from **Dashboard → Billing**.
 * [Send Your First Email](./first-email) — Detailed examples in multiple languages
 * [DNS Setup Guide](../guides/dns-setup) — Configure SPF, DKIM, and DMARC for better deliverability
 * [SMTP Configuration](../guides/smtp-configuration) — Deep dive into SMTP settings and TLS
-* [Two-Pool System](../features/two-pool-system) — Understand NorthRelay's IP reputation architecture
+* [Sending Infrastructure](../features/two-pool-system) — How NorthRelay delivers your mail from one protected IP
 
 
 # Introduction to NorthRelay
@@ -5576,33 +5544,34 @@ Upgrade anytime from **Dashboard → Billing**.
 
 ## Overview [#overview]
 
-NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery without the risks of shared IP reputation.
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
 
 ***
 
-## The "Noisy Neighbor" Problem [#the-noisy-neighbor-problem]
+## The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
 
-When you use traditional email services, you share IP addresses with thousands of other senders. If one of them sends spam or gets blacklisted, **your emails suffer too**.
+Most email services put thousands of senders on the same IP addresses and let anyone send from any address. If one of them sends spam or gets blacklisted, **your emails suffer too** - your legitimate business email ends up in spam folders because of someone else's bad behavior.
 
-This is the "noisy neighbor" problem - your legitimate business emails end up in spam folders because of someone else's bad behavior.
+A sending IP is only as trustworthy as the least careful sender allowed on it. The fix is not to hide you on a different IP - it is to make sure nobody on the IP can behave badly.
 
 ***
 
 ## How NorthRelay Solves It [#how-northrelay-solves-it]
 
-NorthRelay uses a **Two-Pool System**:
+Every NorthRelay message leaves from **one protected sending IP**, and we treat its reputation as our job:
 
-1. **Shared Pool** - For development and low-volume senders (Free, Starter & Micro tiers)
-2. **Isolated Pool** - Dedicated IP reputation for paid users (Pro & Scale tiers)
+* **Verified senders only** - you can only send from domains you have verified, so nobody can spoof a domain they don't own
+* **Automatic hygiene** - one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
+* **Monitored every hour** - a delivery canary confirms mail is arriving with SPF, DKIM and DMARC passing
 
-When you upgrade to an Isolated Pool, your emails exit through a **completely separate IP address**. Your reputation is yours alone.
+Plans differ by quota and features, never by IP. See [Sending Infrastructure](../features/two-pool-system) for details.
 
 ***
 
 ## Key Features [#key-features]
 
 * 🚀 **Quick Setup** - Send emails in under 5 minutes
-* 🛡️ **Sovereign IPs** - No noisy neighbors on paid tiers
+* 🛡️ **Protected Sending IP** - Verified senders only, monitored every hour
 * 🔧 **Self-Service Tools** - Pre-Flight Check, Blocklist Monitor, Connectivity Doctor
 * 📊 **Real-Time Analytics** - See delivery status, bounces, and reputation scores
 * 🔐 **Enterprise Security** - TLS encryption, DKIM signing, DMARC compliance
@@ -5731,14 +5700,13 @@ You have hit your plan's sending quota.
 2. Warnings appear at 80% and 100% of your quota
 3. Quota resets at the start of each billing period
 
-| Tier       | Quota/Month |
-| ---------- | ----------- |
-| Free       | 3,000       |
-| Starter    | 10,000      |
-| Micro      | 25,000      |
-| Pro        | 50,000      |
-| Scale      | 150,000     |
-| Enterprise | 200,000+    |
+| Tier    | Quota/Day |
+| ------- | --------- |
+| Free    | 100       |
+| Starter | 500       |
+| Micro   | 1,000     |
+| Pro     | 10,000    |
+| Scale   | 50,000    |
 
 To increase your quota, upgrade your plan at **Dashboard → Billing**.
 
@@ -5824,7 +5792,7 @@ Add a TXT record at the root of your domain:
 
 ### How It Works [#how-it-works]
 
-The `include:_spf.north-pipe.ca` directive tells receiving servers to look up NorthRelay's SPF record, which lists all NorthRelay sending IPs (both shared and sovereign relay servers, IPv4 and IPv6). The `-all` suffix means "reject email from any other source" — this is the strictest and most secure setting.
+The `include:_spf.north-pipe.ca` directive tells receiving servers to look up NorthRelay's SPF record, which lists NorthRelay's sending IPs (IPv4 and IPv6), so you never need to update SPF when our infrastructure changes. The `-all` suffix means "reject email from any other source" — this is the strictest and most secure setting.
 
 ### If You Already Have an SPF Record [#if-you-already-have-an-spf-record]
 
@@ -6764,16 +6732,17 @@ SMTP_TLS=true
 
 The distinction between `SMTP_SECURE` and `SMTP_TLS` varies by library. `SMTP_SECURE=false` with `SMTP_TLS=true` typically means STARTTLS on port 587. `SMTP_SECURE=true` typically means implicit TLS on port 465.
 
-## Pool-Specific Behavior [#pool-specific-behavior]
+## Sending relay [#sending-relay]
 
-NorthRelay uses two IP pools for sending. Your pool is determined by your plan tier:
+All users connect to the same `smtp.north-pipe.ca` host, on every plan. Your mail then leaves from NorthRelay's single sending relay:
 
-| Pool         | Tiers                  | EHLO Hostname             |
-| ------------ | ---------------------- | ------------------------- |
-| **Shared**   | Free, Starter, Micro   | `shared.north-pipe.ca`    |
-| **Isolated** | Pro, Scale, Enterprise | `sovereign.north-pipe.ca` |
+| Setting           | Value                        |
+| ----------------- | ---------------------------- |
+| **Sending relay** | `sovereign.north-pipe.ca`    |
+| **EHLO hostname** | `sovereign.north-pipe.ca`    |
+| **SPF include**   | `include:_spf.north-pipe.ca` |
 
-This is handled automatically by NorthRelay's routing infrastructure. You do not need to configure anything differently — all users connect to the same `smtp.north-pipe.ca` host and NorthRelay routes your email through the appropriate pool.
+There is nothing to configure — the path is identical for every account and does not change when you upgrade. See [Sending Infrastructure](/docs/features/two-pool-system).
 
 ## Troubleshooting [#troubleshooting]
 
@@ -7384,7 +7353,7 @@ NorthRelay runs as a Docker Compose stack with the following services:
 | `cron`     | alpine/curl            | Scheduled task runner                   |
 | `nginx`    | nginx:alpine           | Reverse proxy with TLS termination      |
 
-For the full production topology with two-pool routing, see [Stalwart Setup](/docs/operators/stalwart-setup).
+For the full production topology with the single relay route, see [Stalwart Setup](/docs/operators/stalwart-setup).
 
 ***
 
@@ -7644,7 +7613,7 @@ curl -s -u admin:TOKEN http://localhost:8080/api/healthz
 curl -s http://localhost:3000/api/health | jq .status
 # Expected: "ok"
 
-# WireGuard Tunnel (if using two-pool routing)
+# WireGuard Tunnel (Sanctuary → sending relay)
 wg show wg0
 # Expected: "latest handshake" within last 2 minutes
 
@@ -7732,15 +7701,13 @@ docker logs sovereign-opendkim 2>&1 | grep -E "DKIM|signing"
 docker logs shared-opendkim 2>&1 | grep -i "error\|fail\|no key"
 ```
 
-### Pool Routing [#pool-routing]
+### Delivery canary [#delivery-canary]
 
-```bash
-# Check routing decisions in app logs
-docker compose logs app 2>&1 | grep "pool"
+Every hour the cron worker calls `/api/cron/email-canary`, which sends a real message through the full path (app → Stalwart → sending relay → internet → MX → mailbox), reads it back over JMAP and records latency plus SPF/DKIM/DMARC results.
 
-# Verify correct pool assignment
-docker compose logs app 2>&1 | grep "X-NorthRelay-Pool"
-```
+* **Where to see it:** Admin → System emails (`/dashboard/admin/system-emails`) shows the latest run (PASS/FAIL, latency, authentication results).
+* **Alerts:** `email_canary_failed` (Critical) is raised when a run fails; `email_canary_stale` (High) when no run has completed recently. Both appear in the admin alert list.
+* **Run one now:** `POST /api/cron/email-canary` with the cron bearer token, then check the admin page a few minutes later.
 
 ### Authentication Failures [#authentication-failures]
 
@@ -7860,7 +7827,7 @@ ss -tnp | grep -E ':25|:587|:443|:5432|:6379' | awk '{print $4}' | sort | uniq -
 
 ## WireGuard Tunnel Health [#wireguard-tunnel-health]
 
-If using the two-pool architecture with WireGuard tunnels:
+Sanctuary reaches the sending relay over a single WireGuard tunnel (`sovereign.north-pipe.ca` resolves to `10.0.2.2` via `/etc/hosts`):
 
 ```bash
 # Check tunnel status
@@ -7869,10 +7836,9 @@ wg show wg0
 # Key fields to check:
 # - "latest handshake": Should be within last 2 minutes
 # - "transfer": Should show non-zero rx/tx bytes
-# - "allowed ips": Should match expected relay subnets
+# - "allowed ips": Should match the relay subnet
 
-# Ping relay VPS through tunnel
-ping -c 3 10.0.1.2  # Shared relay
+# Ping the sending relay through the tunnel
 ping -c 3 10.0.2.2  # Sovereign relay
 
 # Check routing table
@@ -7987,8 +7953,7 @@ sudo wg show wg0
 # If tunnel is down, bring it up
 sudo wg-quick up wg0
 
-# Verify connectivity to relay VPSes
-ping -c 3 10.0.1.2
+# Verify connectivity to the sending relay
 ping -c 3 10.0.2.2
 ```
 
@@ -8056,16 +8021,25 @@ dig TXT default._domainkey.yourdomain.com +short
 dig TXT _dmarc.yourdomain.com +short
 ```
 
-### Step 4: Check Pool Routing [#step-4-check-pool-routing]
+### Step 4: Check the relay route [#step-4-check-the-relay-route]
 
 ```bash
-# Verify the user's pool assignment in the database
-docker compose exec postgres psql -U north_user -d northrelay \
-  -c "SELECT email, \"planTier\", \"poolType\" FROM users WHERE email = 'user@domain.com';"
+# Verify Stalwart's route points at the sending relay (DNS hostname, never a raw IP)
+docker exec stalwart stalwart-cli \
+  -u http://localhost:8080 -c admin:TOKEN \
+  server list-config 'queue.route.relay'
+# Expected: address = sovereign.north-pipe.ca
 
-# Confirm WireGuard tunnel is up for the correct pool
-ping -c 1 10.0.1.2  # Shared pool relay
-ping -c 1 10.0.2.2  # Isolated pool relay
+# Confirm the hostname resolves to the WireGuard address on Sanctuary
+getent ahosts sovereign.north-pipe.ca
+# Expected: 10.0.2.2
+
+# Confirm the tunnel to the sending relay is up
+ping -c 1 10.0.2.2  # Sovereign relay
+
+# Check the latest delivery canary run
+# Admin → System emails (/dashboard/admin/system-emails): last run should be PASS
+# Alerts email_canary_failed / email_canary_stale mean the full path is broken
 ```
 
 ### Step 5: Check Blocklists [#step-5-check-blocklists]
@@ -8128,7 +8102,7 @@ docker compose run --rm stalwart /usr/local/bin/stalwart-mail \
 ### Symptoms [#symptoms]
 
 * Emails queue up but never deliver
-* Ping to `10.0.1.2` or `10.0.2.2` fails
+* Ping to `10.0.2.2` (sending relay) fails
 * `wg show` shows no recent handshake
 
 ### Step 1: Check Tunnel Status [#step-1-check-tunnel-status]
@@ -8409,10 +8383,10 @@ echo "Backup completed: ${BACKUP_DIR}"
 
 NorthRelay uses Stalwart in a **split-role architecture** with two separate instances:
 
-| Instance            | Role            | Location      | Purpose                                                         |
-| ------------------- | --------------- | ------------- | --------------------------------------------------------------- |
-| **Outbound Relay**  | Queue + routing | Sanctuary VPS | Accepts SMTP submissions, routes to correct pool, manages queue |
-| **Inbound Mailbox** | IMAP + JMAP     | Mailbox VPS   | Receives inbound mail, user mailboxes, dashboard inbox          |
+| Instance            | Role            | Location      | Purpose                                                              |
+| ------------------- | --------------- | ------------- | -------------------------------------------------------------------- |
+| **Outbound Relay**  | Queue + routing | Sanctuary VPS | Accepts SMTP submissions, routes to the sending relay, manages queue |
+| **Inbound Mailbox** | IMAP + JMAP     | Mailbox VPS   | Receives inbound mail, user mailboxes, dashboard inbox               |
 
 These are independent Stalwart instances with separate configurations, separate admin tokens, and separate Management APIs.
 
@@ -8425,17 +8399,15 @@ These are independent Stalwart instances with separate configurations, separate 
 The relay instance handles all outbound email:
 
 ```
-User App → SMTP submission → Stalwart Relay → Pool Router → Relay VPS → Internet
-                                                  ↓
-                                    Shared Pool:   WireGuard → 76.13.26.53
-                                    Isolated Pool: WireGuard → 76.13.27.101
+User App → SMTP submission → Stalwart Relay → [queue.route.relay] → sovereign.north-pipe.ca → Internet
+                                                  (WireGuard, all tiers)
 ```
 
 Key characteristics:
 
 * Runs on the Sanctuary VPS alongside the dashboard
 * Uses host networking in Docker for SMTP port binding
-* Routes emails to shared or isolated relay based on user tier
+* Routes every email, on every tier, to the single sending relay (`sovereign.north-pipe.ca`)
 * DKIM signing is **disabled** (handled by OpenDKIM on relay VPSes)
 * Management API on port 8080 (internal only)
 
@@ -8501,14 +8473,16 @@ The `fallback-admin.secret` is the token used for Management API and CLI authent
 # DKIM signing disabled - handled by OpenDKIM on relay VPSes
 sign.enable = false
 
-[queue.outbound.remote.shared]
-address = "10.0.1.2"
+[queue.route.relay]
+type = "relay"
+address = "sovereign.north-pipe.ca"   # DNS hostname — never a raw IP (Stalwart v0.15 bug)
 port = 25
 
-[queue.outbound.remote.isolated]
-address = "10.0.2.2"
-port = 25
+[queue.strategy]
+route = "'relay'"
 ```
+
+See [Outbound routing](#outbound-routing) below for the details.
 
 ***
 
@@ -8718,21 +8692,32 @@ curl -u admin:TOKEN -X POST http://localhost:8080/api/principal \
 
 ***
 
-## Two-Pool Routing [#two-pool-routing]
+## Outbound routing [#outbound-routing]
 
-The outbound relay routes emails to different relay VPSes based on the user's pool assignment:
+The outbound relay sends every message, on every tier, through one route to the sending relay:
 
-| User Tier              | Pool Type | Route                   | Relay VPS      |
-| ---------------------- | --------- | ----------------------- | -------------- |
-| Free, Starter, Micro   | Shared    | WireGuard `10.0.1.2:25` | `76.13.26.53`  |
-| Pro, Scale, Enterprise | Isolated  | WireGuard `10.0.2.2:25` | `76.13.27.101` |
+| Route   | Address                                                   | Relay VPS      |
+| ------- | --------------------------------------------------------- | -------------- |
+| `relay` | `sovereign.north-pipe.ca:25` (over WireGuard, `10.0.2.2`) | `76.13.27.101` |
 
-Routing is enforced by HTTP headers injected by the API:
+```toml
+[queue.route.relay]
+type = "relay"
+address = "sovereign.north-pipe.ca"
+port = 25
 
-* `X-NorthRelay-Pool-Type`: `Shared` or `Isolated`
-* `X-NorthRelay-Pool-Tier`: The user's plan tier
+[queue.strategy]
+route = "'relay'"
+```
 
-> **Critical:** Pool mixing is never acceptable. If routing is ambiguous, always default to the **Shared** pool to protect Isolated IP reputation. See the [Two-Pool System](/docs/features/two-pool-system) for more details.
+Rules that matter in Stalwart v0.15:
+
+* The route address **must be a DNS hostname**, never a raw IP — a raw IP triggers a "record not found for MX" error. On Sanctuary, `/etc/hosts` maps `sovereign.north-pipe.ca` to the WireGuard address `10.0.2.2` so the route stays inside the tunnel.
+* `queue.outbound.next-hop` is ignored; only `queue.strategy.route` selects the route.
+* RocksDB keys override the TOML file. After changing the route, delete any stale `queue.strategy.route` / `queue.route.*` keys and run `server reload-config`.
+* Never set `queue.outbound.is_local` on the relay instance — it has no mailboxes.
+
+Tier does not affect routing. See [Sending Infrastructure](/docs/features/two-pool-system) for what protects the relay's reputation.
 
 ***
 
@@ -8854,8 +8839,6 @@ The MCP server exposes 80+ tools organized into 17 groups.
 | **suppression\_groups** | `create_group`, `list_groups`, `add_to_group`, `remove_from_group`                        | Organize suppression groups         |
 | **subusers**            | `create_subuser`, `list_subusers`, `update_subuser`, `delete_subuser`                     | Team member management              |
 | **identity**            | `create_identity`, `list_identities`, `update_identity`, `delete_identity`                | Sender identity management          |
-| **ip\_pools**           | `list_ip_pools`, `get_ip_pool`                                                            | IP pool assignments                 |
-| **ips**                 | `list_ips`, `get_ip`                                                                      | Dedicated IP management             |
 | **brand\_theme**        | `get_brand_theme`, `update_brand_theme`                                                   | Email branding customization        |
 | **reputation**          | `get_reputation`, `get_reputation_history`, `list_incidents`                              | Sender reputation monitoring        |
 
@@ -9181,20 +9164,6 @@ identity = client.identity.create(
     name="Marketing Team",
     email="marketing@yourdomain.com",
 )
-```
-
-### IP Pools [#ip-pools]
-
-```python
-pools = client.ip_pools.list()
-pool = client.ip_pools.get("pool_id")
-```
-
-### IPs [#ips]
-
-```python
-ips = client.ips.list()
-ip = client.ips.get("ip_id")
 ```
 
 ### Brand Theme [#brand-theme]
@@ -9667,24 +9636,6 @@ const identity = await client.identity.create({
   name: 'Marketing Team',
   email: 'marketing@yourdomain.com',
 });
-```
-
-### IP Pools [#ip-pools]
-
-Manage IP pool assignments (Enterprise tier).
-
-```typescript
-const pools = await client.ipPools.list();
-const pool = await client.ipPools.get('pool_id');
-```
-
-### IPs [#ips]
-
-View and manage your dedicated IP addresses.
-
-```typescript
-const ips = await client.ips.list();
-const ip = await client.ips.get('ip_id');
 ```
 
 ### Brand Theme [#brand-theme]
