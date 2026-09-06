@@ -371,18 +371,20 @@ The `rates` object contains percentages. `clickToOpenRate` is clicks divided by 
 
 # Authentication [#authentication]
 
-All NorthRelay API requests require authentication. The primary method is Bearer token authentication using API keys.
+Most NorthRelay API requests require authentication; tracking and signed unsubscribe endpoints have separate public access rules. The primary API method is Bearer authentication using API keys. Inactive, revoked and expired keys are rejected. Use the narrowest scope supported by the endpoint and rotate keys after exposure.
+
+API keys require an active, verified account and grant access to that account's supported tenant APIs. Administrative actions require a dashboard session with recent MFA; an administrator's personal API key does not grant administrative privileges. Signing out revokes the dashboard session, and password/security changes require a fresh sign-in.
 
 ## API Key Formats [#api-key-formats]
 
 NorthRelay issues two types of API keys, distinguished by prefix:
 
-| Prefix     | Environment | Behavior                                               |
-| ---------- | ----------- | ------------------------------------------------------ |
-| `nr_live_` | Production  | Sends real emails                                      |
-| `nr_test_` | Test        | Simulates sending without delivering; charges no quota |
+| Prefix     | Environment            | Behavior                                            |
+| ---------- | ---------------------- | --------------------------------------------------- |
+| `nr_live_` | Production             | Sends real emails                                   |
+| `nr_test_` | Accepted legacy prefix | The prefix alone does not provide sandbox isolation |
 
-Both key types authenticate against the same endpoints. Use `nr_test_` keys during development and integration testing to avoid consuming your monthly quota.
+Both prefixes use the same validator. A prefix alone does not prevent real delivery or quota consumption. Use an isolated test environment and a mail sink for integration tests.
 
 ## Creating an API Key [#creating-an-api-key]
 
@@ -468,15 +470,24 @@ result = response.json()
 
 API keys can be scoped to limit their permissions:
 
-| Scope         | Permissions                                                                  |
-| ------------- | ---------------------------------------------------------------------------- |
-| `full_access` | All API operations (send, domains, templates, contacts, webhooks, analytics) |
-| `sending`     | Send emails, use templates, validate addresses                               |
-| `read_only`   | List and read resources; no create, update, or delete operations             |
+| Scope                                     | Permissions                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `full_access`                             | All API operations (send, domains, templates, contacts, webhooks, analytics) |
+| `sending_access`                          | Convenience scope for `emails:send` and `emails:read`                        |
+| `emails:send`, `emails:read`              | Send/manage submission jobs, or read email status and validate addresses     |
+| `templates:read`, `templates:write`       | Read/preview templates, or manage templates and branding                     |
+| `contacts:read`, `contacts:write`         | Read/export contacts, or manage/import contacts and lists                    |
+| `domains:read`, `domains:write`           | Read domains, or manage/verify domains                                       |
+| `campaigns:read`, `campaigns:write`       | Read campaigns, or manage campaigns; dispatch also requires `emails:send`    |
+| `webhooks:read`, `webhooks:write`         | Read webhooks, or manage/retry webhook deliveries                            |
+| `suppressions:read`, `suppressions:write` | Read or manage suppressions and preferences                                  |
+| `analytics:read`, `keys:read`             | Read analytics or API key metadata                                           |
 
-Select the narrowest scope that meets your use case. A key with `sending` scope cannot manage domains or webhooks.
+Select the narrowest scopes that meet your use case. `sending` and `read_only` are not recognized scope names. The dashboard sending preset additionally includes template/domain read scopes. API key creation, deletion and revocation require `full_access`; `keys:write` alone cannot mint broader credentials. Unclassified routes require `full_access` by default. Existing legacy keys with null/empty stored scopes retain full access for compatibility and should be reviewed explicitly.
 
 ## Session Authentication [#session-authentication]
+
+New passwords and password resets require at least 12 characters, an uppercase letter, a lowercase letter and a digit, with a maximum of 72 UTF-8 bytes. Existing-account login remains compatible with previously accepted passwords.
 
 Dashboard endpoints also accept NextAuth.js session cookies. This is used automatically when you interact with the API from the NorthRelay dashboard. Session auth is not recommended for server-to-server integrations -- use API keys instead.
 
@@ -512,7 +523,7 @@ An invalid or revoked key returns:
 
 3. **Rotate keys regularly.** Revoke and regenerate keys every 90 days or after any suspected exposure.
 
-4. **Use the narrowest scope.** A backend that only sends emails should use a `sending`-scoped key, not `full_access`.
+4. **Use the narrowest scope.** A backend that only sends emails should use a `sending_access`- or `emails:send`-scoped key.
 
 5. **Use `nr_test_` keys for development.** Avoid consuming production quota or accidentally sending real emails during testing.
 
@@ -721,52 +732,39 @@ curl -X DELETE https://app.northrelay.ca/api/v1/contacts/ct_e5f6g7h8 \
 
 ## Bulk Import Contacts [#bulk-import-contacts]
 
-Import multiple contacts in a single request. Existing contacts (matched by email) are updated; new contacts are created.
+Import a CSV file using multipart form data. Existing contacts matched by email are skipped; new contacts are created. This route requires `contacts:write` and does not update existing contacts or assign lists.
 
 ```
 POST /contacts/import
 ```
 
-### Request Body [#request-body-2]
+| Field      | Type        | Required | Description                                                                                    |
+| ---------- | ----------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `file`     | CSV file    | Yes      | Up to 2 MiB and 1,000 contacts plus the header row                                             |
+| `mappings` | JSON string | Yes      | Array of `{csvColumn, field}`; fields are `email`, `firstName`, `lastName`, `phone`, or `skip` |
 
-| Field            | Type      | Required | Description                                               |
-| ---------------- | --------- | -------- | --------------------------------------------------------- |
-| `contacts`       | object\[] | Yes      | Array of contact objects (max 10,000)                     |
-| `listId`         | string    | No       | Add all imported contacts to this list                    |
-| `updateExisting` | boolean   | No       | Update existing contacts on email match (default: `true`) |
-
-Each object in the `contacts` array uses the same fields as [Create Contact](#create-contact).
+The email field must map to an existing unique header. Quoted commas, escaped quotes and multiline fields are supported. Maximum 100 columns and 4,096 characters per field; multipart overhead is capped at 64 KiB. Split larger imports into separate requests. Oversized bodies/files return HTTP 413; malformed CSV or record/field limit violations return HTTP 400.
 
 ### Example Request [#example-request-5]
 
 ```bash
 curl -X POST https://app.northrelay.ca/api/v1/contacts/import \
   -H "Authorization: Bearer nr_live_xxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "contacts": [
-      { "email": "alice@example.com", "firstName": "Alice", "tags": { "source": "csv" } },
-      { "email": "bob@example.com", "firstName": "Bob", "tags": { "source": "csv" } },
-      { "email": "carol@example.com", "firstName": "Carol", "tags": { "source": "csv" } }
-    ],
-    "listId": "lst_x1y2z3",
-    "updateExisting": true
-  }'
+  -F "file=@contacts.csv" \
+  -F 'mappings=[{"csvColumn":"Email","field":"email"},{"csvColumn":"First Name","field":"firstName"}]'
 ```
 
 ### Example Response [#example-response-3]
 
 ```json
 {
-  "imported": 3,
-  "created": 2,
-  "updated": 1,
-  "failed": 0,
+  "imported": 2,
+  "skipped": 1,
   "errors": []
 }
 ```
 
-If individual contacts fail validation, they are skipped and listed in the `errors` array with the reason.
+Individual invalid contacts are skipped and listed in `errors`. Importing a contact does not clear suppression history.
 
 ***
 
@@ -1224,10 +1222,10 @@ curl https://app.northrelay.ca/api/v1/emails/send \
 
 API keys use two prefixes:
 
-| Prefix     | Environment | Purpose                                                            |
-| ---------- | ----------- | ------------------------------------------------------------------ |
-| `nr_live_` | Production  | Sends real emails                                                  |
-| `nr_test_` | Test        | Simulates sends without delivering; useful for integration testing |
+| Prefix     | Environment            | Purpose                                                                            |
+| ---------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| `nr_live_` | Production             | Sends real emails                                                                  |
+| `nr_test_` | Accepted legacy prefix | Does not itself isolate delivery or quota; use a test environment with a mail sink |
 
 Create and manage keys in **Dashboard > Settings > API Keys**. See the [Authentication](/api-reference/authentication) page for full details.
 
@@ -2951,7 +2949,11 @@ Auto-generated from `prisma/schema.prisma`. This page documents the database mod
 
 # Sending API [#sending-api]
 
-The Sending API provides four endpoints for email delivery and address validation. All sending is API-only -- direct SMTP AUTH access is not available.
+The Sending API provides four endpoints for email delivery and address validation. Contact support to confirm SMTP/IMAP availability for your account.
+
+Each message supports at most **100 distinct recipients across To, CC and BCC**. Addresses are deduplicated before quota accounting. Quota reserves recipient attempts at acceptance; a downstream rejection does not automatically refund the reservation. Queued retries reuse the reservation. Account and platform daily limits also apply. Hard-bounced and complained recipients are excluded from every envelope field; marketing mail also honors opt-outs.
+
+Sending requests are limited to 8 MiB of JSON; each HTML/text body is limited to 1 MiB. Ambiguous submission outcomes are held for review to prevent duplicate delivery. Check message status before submitting a replacement request.
 
 ## Send Email [#send-email]
 
@@ -2966,7 +2968,7 @@ POST /emails/send
 | Field         | Type                             | Required | Description                                                                 |
 | ------------- | -------------------------------- | -------- | --------------------------------------------------------------------------- |
 | `from`        | [EmailAddress](#emailaddress)    | Yes      | Sender address                                                              |
-| `to`          | [EmailAddress](#emailaddress)\[] | Yes      | Recipients (1--1,000)                                                       |
+| `to`          | [EmailAddress](#emailaddress)\[] | Yes      | Recipients (1--100, shared total with CC/BCC)                               |
 | `cc`          | [EmailAddress](#emailaddress)\[] | No       | CC recipients                                                               |
 | `bcc`         | [EmailAddress](#emailaddress)\[] | No       | BCC recipients                                                              |
 | `replyTo`     | [EmailAddress](#emailaddress)    | No       | Reply-to address                                                            |
@@ -3542,6 +3544,10 @@ If `alice@example.com` is suppressed in the "Product Updates" group, the email i
 
 Templates let you define reusable email layouts with dynamic variables. Use Handlebars-style `{{variable}}` syntax for personalization. Templates can be referenced by ID when sending emails, keeping your sending code clean and your email content centrally managed.
 
+Template import/render requests accept at most 8 MiB of JSON. Imported HTML/text fields and MJML source are limited to 1 MiB each; MJML compilation requests allow 2 MiB of JSON for encoding overhead. Imports accept up to 100 templates with up to 500 blocks each. MJML file includes are disabled. Read/preview operations require `templates:read`; imports and changes require `templates:write`. Oversized request bodies return HTTP 413.
+
+MJML compilation has a five-second deadline and 4 MiB output limit. If the compiler is busy, retry shortly; reduce large templates if they exceed resource limits.
+
 ## List Templates [#list-templates]
 
 Retrieve all templates for your account.
@@ -3858,6 +3864,8 @@ Variables use Handlebars-style double-brace syntax: `{{variable_name}}`.
 
 
 # Webhooks [#webhooks]
+
+Webhook destinations must use HTTPS on port 443, without credentials in the URL, and resolve exclusively to public IP addresses. Private, loopback, link-local and reserved addresses are rejected on every delivery. Redirects are not followed; configure the final endpoint URL. Deliveries have a 10-second deadline. These rules apply to test deliveries too.
 
 Webhooks deliver real-time HTTP POST notifications to your server when email events occur (delivery, bounce, open, click, etc.). Use webhooks to update your application state, trigger workflows, or monitor deliverability.
 
