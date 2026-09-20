@@ -485,6 +485,23 @@ API keys can be scoped to limit their permissions:
 
 Select the narrowest scopes that meet your use case. `sending` and `read_only` are not recognized scope names. The dashboard sending preset additionally includes template/domain read scopes. API key creation, deletion and revocation require `full_access`; `keys:write` alone cannot mint broader credentials. Unclassified routes require `full_access` by default. Existing legacy keys with null/empty stored scopes retain full access for compatibility and should be reviewed explicitly.
 
+## Keys Issued to Connectors (OAuth) [#keys-issued-to-connectors-oauth]
+
+An MCP client that speaks OAuth rather than taking a key — the claude.ai and
+Claude Desktop connectors — obtains one through the platform's authorization
+server (`/.well-known/oauth-authorization-server`). The client registers
+itself, sends you to a NorthRelay sign-in page that names the client and
+the address the token will go to, and you tick exactly the permissions it
+gets, starting from read-only. What is approved is an ordinary API key named
+`oauth-<client>-…`: it appears under **Settings → API Keys**, holds only the
+scopes you ticked (never `full_access` or `keys:*`), cannot authenticate to
+SMTP, expires after 30 days and is renewed by the client through a rotating
+refresh token. Revoking it under API Keys ends the connector's access: the
+next renewal is refused and the grant is closed. A refresh token presented
+twice, or an authorization code presented twice, revokes the whole grant —
+a stolen copy is indistinguishable from the real one until it is used
+twice, and which holder is the thief is unknowable.
+
 ## Session Authentication [#session-authentication]
 
 New passwords and password resets require at least 12 characters, an uppercase letter, a lowercase letter and a digit, with a maximum of 72 UTF-8 bytes. Existing-account login remains compatible with previously accepted passwords.
@@ -8742,7 +8759,7 @@ Tier does not affect routing. See [Sending Infrastructure](/docs/features/two-po
 
 # MCP Server [#mcp-server]
 
-The NorthRelay MCP Server (`@northrelay/mcp-server` v1.3.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
+The NorthRelay MCP Server (`@northrelay/mcp-server` v1.4.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
 
 ## What is MCP? [#what-is-mcp]
 
@@ -8886,12 +8903,22 @@ Add the following to your Claude Desktop configuration file:
 
 Restart Claude Desktop after saving the configuration.
 
-**claude.ai custom connectors.** The *Add custom connector* dialog in
-claude.ai and Claude Desktop reaches a remote MCP server, but authenticates
-by OAuth or not at all — there is no field for a bearer token. A hosted
-instance of this server, which only accepts a bearer, cannot be added there
-today. Use the stdio configuration above in Claude Desktop, and Claude Code
-or Codex for a hosted endpoint.
+**claude.ai and Claude Desktop custom connectors.** The *Add custom
+connector* dialog reaches a remote MCP server and authenticates by OAuth —
+there is no field for a bearer token. A hosted instance running in
+[connector mode](#connector-mode) is what it needs:
+
+1. Settings → Connectors → *Add custom connector*, with the endpoint URL
+   (`https://mcp.example.net/mcp`), no client id and no secret.
+2. A NorthRelay sign-in page opens. It names the client that is asking and
+   the address the token will be sent to, and starts from read-only
+   permissions; tick exactly what the connector should be able to do.
+3. Approving issues an API key named `oauth-<client>-…`. It appears under
+   **Settings → API Keys**, expires after 30 days (the connector renews it
+   itself), and revoking it there ends the connector's access.
+
+A hosted instance that serves only a shared token cannot be added as a
+connector; use Claude Code or Codex for that one.
 
 ### Cursor [#cursor]
 
@@ -8948,6 +8975,34 @@ curl -s https://mcp.example.com/healthz             # {"status":"ok","sessions":
 curl -s -o /dev/null -w '%{http_code}\n' \
   -X POST https://mcp.example.com/mcp               # 401: the bearer is being checked
 ```
+
+### Connector mode [#connector-mode]
+
+Set `NORTHRELAY_MCP_PUBLIC_URL` to the origin the instance is reached at,
+and a caller may present its **own** NorthRelay API key as the bearer
+instead of the shared token:
+
+```bash
+NORTHRELAY_MCP_PUBLIC_URL=https://mcp.example.net \
+  npx @northrelay/mcp-server --http --port 3010
+```
+
+Each session then acts as the key it presented — scoped and revocable in
+that account's key list — and the process needs no `NORTHRELAY_API_KEY` of
+its own unless it also serves a shared token. The server publishes
+`/.well-known/oauth-protected-resource` naming the NorthRelay platform as
+its authorization server, which is how the claude.ai and Claude Desktop
+connectors find their way to the sign-in page. A key is checked with the
+platform once, when a session opens; a revoked key is refused at the next
+session.
+
+| Variable                    | Description                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NORTHRELAY_MCP_PUBLIC_URL` | This endpoint's public origin, `https://` (or `http://localhost` for a local instance), no path |
+
+The platform side needs nothing configured: every NorthRelay account can
+approve connectors, and `OAUTH_CONNECTORS_DISABLED=true` on the platform
+switches the authorization server off.
 
 ## Tool Groups [#tool-groups]
 
@@ -9052,8 +9107,14 @@ Ensure your API key:
   clients report as a failed connection. Check the token the client was given
   against `NORTHRELAY_MCP_AUTH_TOKEN` on the host.
 * The client was pointed at the host root instead of `/mcp`.
-* Trying to add it as a claude.ai custom connector: that dialog cannot send a
-  bearer token (see [Claude Desktop](#claude-desktop)).
+* Adding it as a claude.ai custom connector without `NORTHRELAY_MCP_PUBLIC_URL`
+  set on the instance: that dialog cannot send a bearer token, so the
+  instance has to run in [connector mode](#connector-mode).
+* The connector reports "Couldn't register with … sign-in service": the
+  instance's `/.well-known/oauth-protected-resource` is not reachable
+  through the reverse proxy, or names a platform origin the client cannot
+  reach. `curl -s https://mcp.example.net/.well-known/oauth-protected-resource`
+  should answer with `authorization_servers`.
 
 ## Related [#related]
 
