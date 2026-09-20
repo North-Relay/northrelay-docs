@@ -8742,7 +8742,7 @@ Tier does not affect routing. See [Sending Infrastructure](/docs/features/two-po
 
 # MCP Server [#mcp-server]
 
-The NorthRelay MCP Server (`@northrelay/mcp-server` v1.1.1) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
+The NorthRelay MCP Server (`@northrelay/mcp-server` v1.3.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
 
 ## What is MCP? [#what-is-mcp]
 
@@ -8750,10 +8750,17 @@ The Model Context Protocol (MCP) is an open standard that lets AI applications i
 
 **Supported AI clients:**
 
+* Claude Code
 * Claude Desktop
+* Codex (CLI, IDE extension and desktop app)
 * Cursor
 * Windsurf
 * Any MCP-compatible client
+
+The server runs in one of two modes. Over **stdio** the client starts it
+locally and gives it your NorthRelay API key. In &#x2A;*hosted (HTTP)** mode one
+running instance serves a team over the network, callers present a bearer
+token, and the API key stays on the host. See [Hosted mode](#hosted-mode).
 
 ## Installation [#installation]
 
@@ -8773,10 +8780,87 @@ npm install -g @northrelay/mcp-server
 
 ### Environment Variables [#environment-variables]
 
-| Variable              | Required | Default                     | Description             |
-| --------------------- | -------- | --------------------------- | ----------------------- |
-| `NORTHRELAY_API_KEY`  | Yes      | —                           | Your NorthRelay API key |
-| `NORTHRELAY_BASE_URL` | No       | `https://app.northrelay.ca` | Custom API base URL     |
+| Variable                        | Required         | Default                     | Description                                                                          |
+| ------------------------------- | ---------------- | --------------------------- | ------------------------------------------------------------------------------------ |
+| `NORTHRELAY_API_KEY`            | Yes              | —                           | Your NorthRelay API key                                                              |
+| `NORTHRELAY_BASE_URL`           | No               | `https://app.northrelay.ca` | Custom API base URL                                                                  |
+| `NORTHRELAY_MCP_AUTH_TOKEN`     | Hosted mode only | —                           | Bearer token(s) callers must present; comma-separate several to rotate without a gap |
+| `NORTHRELAY_MCP_PORT`           | No               | `3010`                      | Port for hosted mode (`--port` wins)                                                 |
+| `NORTHRELAY_MCP_BIND`           | No               | `127.0.0.1`                 | Interface for hosted mode (`--bind` wins)                                            |
+| `NORTHRELAY_MCP_SESSION_TTL_MS` | No               | `600000`                    | Close a hosted session left idle this long                                           |
+
+Keep the API key and the bearer token out of files you commit or text you
+paste. Where a client can read a secret from the environment, the examples
+below do that.
+
+### Claude Code [#claude-code]
+
+Over stdio, with the API key passed through `--env`:
+
+```bash
+claude mcp add northrelay --env NORTHRELAY_API_KEY=nr_live_your_api_key_here \
+  -- npx -y @northrelay/mcp-server
+```
+
+Against a hosted endpoint, with the bearer as a header (`--scope user` makes
+it available in every project):
+
+```bash
+claude mcp add --transport http northrelay https://mcp.example.com/mcp \
+  --header "Authorization: Bearer $NORTHRELAY_MCP_AUTH_TOKEN" \
+  --scope user
+```
+
+In a project's checked-in `.mcp.json`, write the placeholder and Claude Code
+expands it from the environment when it loads:
+
+```json
+{
+  "mcpServers": {
+    "northrelay": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NORTHRELAY_MCP_AUTH_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+`claude mcp list`, or `/mcp` inside a session, shows whether it connected.
+
+### Codex [#codex]
+
+The Codex CLI, IDE extension and desktop app share `~/.codex/config.toml`
+(or a project's `.codex/config.toml`).
+
+Over stdio:
+
+```bash
+codex mcp add northrelay --env NORTHRELAY_API_KEY=nr_live_your_api_key_here \
+  -- npx -y @northrelay/mcp-server
+```
+
+which writes:
+
+```toml
+[mcp_servers.northrelay]
+command = "npx"
+args = ["-y", "@northrelay/mcp-server"]
+
+[mcp_servers.northrelay.env]
+NORTHRELAY_API_KEY = "nr_live_your_api_key_here"
+```
+
+Against a hosted endpoint, name the environment variable that holds the
+bearer — the file itself never contains it:
+
+```toml
+[mcp_servers.northrelay]
+url = "https://mcp.example.com/mcp"
+bearer_token_env_var = "NORTHRELAY_MCP_AUTH_TOKEN"
+```
 
 ### Claude Desktop [#claude-desktop]
 
@@ -8802,6 +8886,13 @@ Add the following to your Claude Desktop configuration file:
 
 Restart Claude Desktop after saving the configuration.
 
+**claude.ai custom connectors.** The *Add custom connector* dialog in
+claude.ai and Claude Desktop reaches a remote MCP server, but authenticates
+by OAuth or not at all — there is no field for a bearer token. A hosted
+instance of this server, which only accepts a bearer, cannot be added there
+today. Use the stdio configuration above in Claude Desktop, and Claude Code
+or Codex for a hosted endpoint.
+
 ### Cursor [#cursor]
 
 In Cursor settings, add an MCP server with:
@@ -8826,6 +8917,36 @@ Add to your Windsurf MCP configuration:
     }
   }
 }
+```
+
+## Hosted mode [#hosted-mode]
+
+By default the server speaks stdio and each client spawns its own copy. Pass
+`--http` to serve Streamable HTTP instead, so a team, a CI job, or an agent
+running elsewhere can share one instance without holding the API key:
+
+```bash
+NORTHRELAY_API_KEY=nr_live_xxx \
+NORTHRELAY_MCP_AUTH_TOKEN=$(openssl rand -hex 32) \
+  npx @northrelay/mcp-server --http --port 3010
+```
+
+* The MCP endpoint is `/mcp`; `GET /healthz` is an unauthenticated probe.
+* A bearer token is **required**. The endpoint can send real mail, rewrite
+  templates and clear suppressions, so the server refuses to start without
+  `NORTHRELAY_MCP_AUTH_TOKEN` and answers `401` to a wrong one. Every caller
+  presents `Authorization: Bearer <token>`.
+* It binds `127.0.0.1` by default. Put it behind a reverse proxy that
+  terminates TLS rather than exposing the port directly.
+* A session idle past `NORTHRELAY_MCP_SESSION_TTL_MS` is closed, so a client
+  that crashes without ending its session is not held forever.
+
+To check an endpoint from a client machine:
+
+```bash
+curl -s https://mcp.example.com/healthz             # {"status":"ok","sessions":N}
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -X POST https://mcp.example.com/mcp               # 401: the bearer is being checked
 ```
 
 ## Tool Groups [#tool-groups]
@@ -8922,7 +9043,17 @@ Ensure your API key:
 
 * Starts with `nr_live_` (production) or `nr_test_` (testing)
 * Has not been revoked
-* Has the necessary permissions for the operations you are performing
+* Has the necessary permissions for the operations you are performing — a
+  key missing a scope answers `403 SCOPE_INSUFFICIENT` naming the scope
+
+### Hosted Endpoint Connects But Shows No Tools [#hosted-endpoint-connects-but-shows-no-tools]
+
+* The client presented the wrong bearer: the server answers `401`, which most
+  clients report as a failed connection. Check the token the client was given
+  against `NORTHRELAY_MCP_AUTH_TOKEN` on the host.
+* The client was pointed at the host root instead of `/mcp`.
+* Trying to add it as a claude.ai custom connector: that dialog cannot send a
+  bearer token (see [Claude Desktop](#claude-desktop)).
 
 ## Related [#related]
 
