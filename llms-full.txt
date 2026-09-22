@@ -9110,11 +9110,20 @@ Ensure your API key:
 * Adding it as a claude.ai custom connector without `NORTHRELAY_MCP_PUBLIC_URL`
   set on the instance: that dialog cannot send a bearer token, so the
   instance has to run in [connector mode](#connector-mode).
-* The connector reports "Couldn't register with … sign-in service": the
-  instance's `/.well-known/oauth-protected-resource` is not reachable
-  through the reverse proxy, or names a platform origin the client cannot
-  reach. `curl -s https://mcp.example.net/.well-known/oauth-protected-resource`
-  should answer with `authorization_servers`.
+* The connector reports "Couldn't register with … sign-in service", or
+  connects but never offers to sign in: the instance's
+  `/.well-known/oauth-protected-resource` is not reachable through the
+  reverse proxy, or names a platform origin the client cannot reach.
+  `curl -s https://mcp.example.net/.well-known/oauth-protected-resource`
+  should answer with `authorization_servers`. A proxy that forwards only
+  `/mcp` and `/healthz` has to forward that path too — the instance answers
+  both the bare path and the `/mcp`-suffixed form, so with Caddy:
+
+  ```text
+  handle /.well-known/oauth-protected-resource* {
+      reverse_proxy 127.0.0.1:3010
+  }
+  ```
 
 ## Related [#related]
 
