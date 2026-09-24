@@ -5835,19 +5835,21 @@ Do not create a second TXT record starting with `v=spf1` — this will cause SPF
 * Adding more than 10 DNS lookups in your SPF chain (SPF has a 10-lookup limit)
 * Creating multiple SPF records on the same domain
 
+Existing domains using `include:north-pipe.ca` remain supported. New setup instructions use `include:_spf.north-pipe.ca`. Publish only one SPF record.
+
 ## DKIM Record [#dkim-record]
 
 DKIM (DomainKeys Identified Mail) adds a cryptographic signature to each outgoing email, allowing the recipient to verify the message was not altered in transit.
 
-### Auto-Configured [#auto-configured]
+### Configure your domain [#configure-your-domain]
 
-DKIM is **automatically configured** when you verify your domain in the NorthRelay dashboard. After verification, NorthRelay publishes the DKIM public key and signs all outgoing email from your domain.
+For a custom domain, publish the DKIM TXT record shown in Domains & senders at `default._domainkey.yourdomain.com`. Copy the full signing key from the dashboard. NorthRelay manages the signing infrastructure; you manage DNS for your custom domain. Managed NorthRelay domains are configured automatically.
 
 To verify your domain:
 
 1. Go to **Dashboard → Domains**
 2. Click **Add Domain** and enter your domain name
-3. Add the verification TXT record shown in the dashboard to your DNS
+3. Add the per-domain ownership TXT record at `_northrelay.yourdomain.com`, plus the SPF and DKIM TXT records shown in the dashboard
 4. Click **Verify**
 5. Once verified, DKIM signing is enabled automatically
 
