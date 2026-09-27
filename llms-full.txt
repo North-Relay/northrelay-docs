@@ -7038,6 +7038,8 @@ Violations result in:
 
 # Configuration Guide [#configuration-guide]
 
+> **Mailbox version boundary:** the hosted mailbox service uses Stalwart Community 0.16.23 with native account administration. The application sending instance has a separate configuration and lifecycle. Older SQL-directory and container examples below must not be applied to the production mailbox; see [Hosted email access](./hosted-mail-access) and the platform `infra/mailbox-next` deployment source.
+
 > Full reference for configuring NorthRelay services, environment variables, and integrations.
 
 ***
@@ -7340,6 +7342,8 @@ For example: `quantum@quantum.north-pipe.ca`
 
 # Deployment Guide [#deployment-guide]
 
+> **Mailbox version boundary:** the hosted mailbox service uses Stalwart Community 0.16.23 with native account administration. The application sending instance has a separate configuration and lifecycle. Older SQL-directory and container examples below must not be applied to the production mailbox; see [Hosted email access](./hosted-mail-access) and the platform `infra/mailbox-next` deployment source.
+
 > Deploy NorthRelay's sovereign SMTP infrastructure on your own VPS.
 
 ***
@@ -7596,6 +7600,43 @@ For DKIM DNS records, see [Configuration - DKIM](/docs/operators/configuration#d
 * [Stalwart Setup](/docs/operators/stalwart-setup) - Detailed Stalwart mail server configuration
 * [Monitoring](/docs/operators/monitoring) - Set up health checks and alerting
 * [Runbooks](/docs/operators/runbooks) - Operational procedures for common issues
+
+
+# Hosted email access
+
+
+
+# Hosted email access [#hosted-email-access]
+
+NorthRelay's hosted inbox service uses Stalwart Community. Sending through the
+NorthRelay API, SDK or MCP remains available independently of a desktop email app.
+
+## Mail application settings [#mail-application-settings]
+
+| Setting             | Value                                                |
+| ------------------- | ---------------------------------------------------- |
+| Username            | Full mailbox email address                           |
+| Incoming host       | `mail.northrelay.ca`                                 |
+| IMAP                | Port 993, SSL/TLS                                    |
+| Outgoing host       | `mail.northrelay.ca`                                 |
+| SMTP                | Port 465 with SSL/TLS, or 587 with STARTTLS          |
+| SMTP authentication | Required; use the mailbox or assigned app credential |
+
+A custom `mail.<domain>` hostname must have DNS and a valid certificate before it
+can be used. Domain verification for sending alone does not configure an inbox,
+MX routing, certificate or automatic client discovery. Follow the hosted-domain
+setup workflow and verify incoming and outgoing access separately.
+
+## Browser access and passwords [#browser-access-and-passwords]
+
+NorthRelay customer inboxes belong to the NorthRelay application. Separately
+managed corporate webmail deployments use their own browser URLs and access
+policies. A corporate Authelia login does not create a NorthRelay customer account.
+
+Corporate SSO, when enabled, authenticates browser webmail through Authelia.
+Desktop and mobile IMAP/SMTP clients continue to use mailbox or app passwords;
+changing an SSO password does not change those credentials. This Community
+deployment does not provide end-to-end mailbox encryption or desktop OAuth login.
 
 
 # Monitoring & Operations
@@ -7888,6 +7929,8 @@ If the tunnel is down, see [Runbooks - WireGuard Tunnel Down](/docs/operators/ru
 
 
 # Operational Runbooks [#operational-runbooks]
+
+> **Mailbox version boundary:** the hosted mailbox service uses Stalwart Community 0.16.23 with native account administration. The application sending instance has a separate configuration and lifecycle. Older SQL-directory and container examples below must not be applied to the production mailbox; see [Hosted email access](./hosted-mail-access) and the platform `infra/mailbox-next` deployment source.
 
 > Step-by-step procedures for diagnosing and resolving operational issues.
 
@@ -8403,6 +8446,18 @@ echo "Backup completed: ${BACKUP_DIR}"
 > Configure Stalwart's split-role architecture for outbound relay and inbound mailbox.
 
 ***
+
+## Current hosted mailbox deployment [#current-hosted-mailbox-deployment]
+
+The hosted mailbox service runs Stalwart Community 0.16.23 on the former shared
+relay host, with native JMAP administration. Client access is documented in
+[Hosted email access](./hosted-mail-access). The deployment source is the
+platform repository's `infra/mailbox-next` directory.
+
+The generic split-role examples below also describe the separately versioned
+application sending instance. Do not apply an old SQL-directory configuration
+or `/api/principal` management example to the 0.16 production mailbox. Mailbox
+administration uses native `x:Account/*`, `x:Domain/*` and `x:AppPassword/*` methods.
 
 ## What is Stalwart [#what-is-stalwart]
 
