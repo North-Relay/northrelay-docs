@@ -5235,552 +5235,6 @@ Your new quota and features apply to your next message. An upgrade never require
 Until September 2026, NorthRelay routed Free/Starter/Micro accounts through a "Shared" IP and Pro/Scale accounts through an "Isolated" IP. That design was retired in favour of one well-protected IP for everyone: a single warm, monitored relay with a strict sender policy is simpler, easier to defend and delivers at least as well as splitting traffic across two addresses. This page keeps its URL so existing links continue to work.
 
 
-# Send Your First Email
-
-
-
-# Send Your First Email [#send-your-first-email]
-
-This guide shows you how to send your first email through NorthRelay using SMTP, the REST API, or one of our SDKs.
-
-Before you begin, make sure you have your SMTP credentials ready. See [Installation & Quick Start](./installation) if you have not set up your account yet.
-
-## Using SMTP [#using-smtp]
-
-### Node.js with Nodemailer [#nodejs-with-nodemailer]
-
-```javascript
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.north-pipe.ca",
-  port: 587,
-  secure: false, // STARTTLS
-  auth: {
-    user: "your-email@example.com",
-    pass: "nr_live_xxxxxxxxxxxx",
-  },
-});
-
-async function sendEmail() {
-  const info = await transporter.sendMail({
-    from: "you@yourdomain.com",
-    to: "recipient@example.com",
-    subject: "Hello from NorthRelay!",
-    text: "This is my first email sent through NorthRelay.",
-    html: "<p>This is my first email sent through <strong>NorthRelay</strong>.</p>",
-  });
-
-  console.log("Message sent:", info.messageId);
-}
-
-sendEmail().catch(console.error);
-```
-
-### Python with smtplib [#python-with-smtplib]
-
-```python
-import smtplib
-from email.mime.text import MIMEText
-
-msg = MIMEText("This is my first email sent through NorthRelay.")
-msg["Subject"] = "Hello from NorthRelay!"
-msg["From"] = "you@yourdomain.com"
-msg["To"] = "recipient@example.com"
-
-with smtplib.SMTP("smtp.north-pipe.ca", 587) as server:
-    server.starttls()
-    server.login("your-email@example.com", "nr_live_xxxxxxxxxxxx")
-    server.send_message(msg)
-
-print("Email sent successfully!")
-```
-
-## Using the REST API [#using-the-rest-api]
-
-Send an email with a single HTTP request. Authenticate with your API key as a Bearer token.
-
-### cURL [#curl]
-
-```bash
-curl -X POST https://app.northrelay.ca/api/v1/emails/send \
-  -H "Authorization: Bearer nr_live_xxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "from": "you@yourdomain.com",
-    "to": "recipient@example.com",
-    "subject": "Hello from NorthRelay!",
-    "text": "This is my first email sent through NorthRelay.",
-    "html": "<p>This is my first email sent through <strong>NorthRelay</strong>.</p>"
-  }'
-```
-
-### Example Response [#example-response]
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "msg_abc123def456",
-    "status": "queued",
-    "from": "you@yourdomain.com",
-    "to": "recipient@example.com",
-    "subject": "Hello from NorthRelay!"
-  }
-}
-```
-
-## Using the TypeScript SDK [#using-the-typescript-sdk]
-
-```bash
-npm install @northrelay/sdk
-```
-
-```typescript
-import { NorthRelay } from "@northrelay/sdk";
-
-const northrelay = new NorthRelay({
-  apiKey: "nr_live_xxxxxxxxxxxx",
-});
-
-async function main() {
-  const result = await northrelay.emails.send({
-    from: "you@yourdomain.com",
-    to: "recipient@example.com",
-    subject: "Hello from NorthRelay!",
-    text: "This is my first email sent through NorthRelay.",
-  });
-
-  console.log("Email sent:", result.id);
-}
-
-main();
-```
-
-## Using the Python SDK [#using-the-python-sdk]
-
-```bash
-pip install northrelay
-```
-
-```python
-from northrelay import NorthRelay
-
-client = NorthRelay(api_key="nr_live_xxxxxxxxxxxx")
-
-result = client.emails.send(
-    from_address="you@yourdomain.com",
-    to="recipient@example.com",
-    subject="Hello from NorthRelay!",
-    text="This is my first email sent through NorthRelay.",
-)
-
-print(f"Email sent: {result.id}")
-```
-
-## Verifying Delivery [#verifying-delivery]
-
-After sending your first email, verify it was delivered successfully:
-
-### 1. Check Dashboard Logs [#1-check-dashboard-logs]
-
-Go to **Dashboard → Email Logs**. You should see your email with one of these statuses:
-
-| Status      | Meaning                                         |
-| ----------- | ----------------------------------------------- |
-| `queued`    | Email accepted and waiting to be sent           |
-| `sent`      | Email handed off to the recipient's mail server |
-| `delivered` | Recipient's server confirmed receipt            |
-| `bounced`   | Recipient's server rejected the email           |
-| `failed`    | A sending error occurred                        |
-
-### 2. Check the Recipient's Inbox [#2-check-the-recipients-inbox]
-
-Look in both the inbox and the spam/junk folder. If the email lands in spam, you likely need to set up DNS authentication records. See the [DNS Setup Guide](../guides/dns-setup).
-
-### 3. Common Status Codes [#3-common-status-codes]
-
-| SMTP Code | Meaning                 | Action                                  |
-| --------- | ----------------------- | --------------------------------------- |
-| `250`     | Success                 | Email accepted                          |
-| `421`     | Service unavailable     | Retry in a few minutes                  |
-| `451`     | Rate limit exceeded     | Check your quota in Dashboard → Billing |
-| `550`     | Mailbox not found       | Verify the recipient address            |
-| `553`     | Authentication required | Check your credentials                  |
-
-## Troubleshooting Quick Tips [#troubleshooting-quick-tips]
-
-**Authentication error (535)**
-
-* Verify your username is your full account email, not a custom domain address
-* Confirm you are using an API key (starts with `nr_live_`) as the password
-* Check that the API key has not been revoked in Dashboard → API Keys
-
-**Connection refused**
-
-* Ensure your network allows outbound connections on port 587
-* Test connectivity: `telnet smtp.north-pipe.ca 587`
-* If port 587 is blocked, try port 465 (implicit TLS)
-
-**Email bounced**
-
-* Check that the recipient address is valid
-* Set up SPF, DKIM, and DMARC records for your sending domain — see the [DNS Setup Guide](../guides/dns-setup)
-* Review the bounce reason in Dashboard → Email Logs
-
-For more detailed troubleshooting, see the [Troubleshooting Guide](./troubleshooting).
-
-## Next Steps [#next-steps]
-
-* [DNS Setup Guide](../guides/dns-setup) — Improve deliverability with SPF, DKIM, and DMARC
-* [Node.js Integration](../guides/nodejs-integration) — Full Node.js integration with error handling
-* [Python Integration](../guides/python-integration) — Django, Flask, and FastAPI examples
-* [SMTP Configuration](../guides/smtp-configuration) — Advanced SMTP settings and TLS options
-
-
-# Installation & Quick Start
-
-
-
-# Installation & Quick Start [#installation--quick-start]
-
-Get up and running with NorthRelay in 5 minutes. This guide walks you through creating an account, obtaining credentials, and sending your first email.
-
-## Prerequisites [#prerequisites]
-
-* An email address to create your NorthRelay account
-* An application that sends email (WordPress, Node.js, Python, or any SMTP-capable tool)
-
-## Step 1: Create an Account [#step-1-create-an-account]
-
-1. Go to [northrelay.ca/signup](https://northrelay.ca/signup)
-2. Enter your email address and create a password
-3. Check your inbox for a 6-digit verification code
-4. Enter the code on the verification page (code expires after 15 minutes)
-
-Your account starts on the **Free** tier with 100 emails per day at no cost.
-
-## Step 2: Get Your SMTP Credentials [#step-2-get-your-smtp-credentials]
-
-After logging in, navigate to **Dashboard → API Keys** and click **Create API Key**.
-
-Your API key acts as both your API token and your SMTP password. Copy it immediately — it will not be shown again.
-
-| Setting        | Value                                        |
-| -------------- | -------------------------------------------- |
-| **SMTP Host**  | `smtp.north-pipe.ca`                         |
-| **SMTP Port**  | `587` (STARTTLS)                             |
-| **Username**   | Your account email (e.g., `you@example.com`) |
-| **Password**   | Your API key (e.g., `nr_live_xxxxxxxxxxxx`)  |
-| **Encryption** | STARTTLS                                     |
-
-## Step 3: Configure Your Application [#step-3-configure-your-application]
-
-Use the SMTP settings above in your application. We have detailed integration guides for popular platforms:
-
-* [Node.js (Nodemailer / SDK)](../guides/nodejs-integration)
-* [Python (smtplib / SDK)](../guides/python-integration)
-* [WordPress (WP Mail SMTP)](../guides/wordpress-integration)
-* [Generic SMTP Configuration](../guides/smtp-configuration)
-
-## Step 4: Send a Test Email [#step-4-send-a-test-email]
-
-You can send a test email using either SMTP or the REST API.
-
-### Option A: SMTP with swaks [#option-a-smtp-with-swaks]
-
-```bash
-swaks --to recipient@example.com \
-      --from you@yourdomain.com \
-      --server smtp.north-pipe.ca:587 \
-      --auth LOGIN \
-      --auth-user your-email@example.com \
-      --auth-password nr_live_xxxxxxxxxxxx \
-      --tls \
-      --header "Subject: NorthRelay Test" \
-      --body "Hello from NorthRelay!"
-```
-
-Install swaks on Ubuntu/Debian with `sudo apt install swaks`, or on macOS with `brew install swaks`.
-
-### Option B: REST API with cURL [#option-b-rest-api-with-curl]
-
-```bash
-curl -X POST https://app.northrelay.ca/api/v1/emails/send \
-  -H "Authorization: Bearer nr_live_xxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "from": "you@yourdomain.com",
-    "to": "recipient@example.com",
-    "subject": "NorthRelay Test",
-    "text": "Hello from NorthRelay!"
-  }'
-```
-
-## Step 5: Verify Delivery [#step-5-verify-delivery]
-
-1. Go to **Dashboard → Email Logs** to see the status of your test email
-2. Look for a `delivered` status — this confirms the email reached the recipient's mail server
-3. Check the recipient's inbox (and spam folder) to confirm delivery
-
-If the email shows a `bounced` or `failed` status, check the error message in the log entry for details.
-
-## SDK Installation (Optional) [#sdk-installation-optional]
-
-For a more integrated experience, install the NorthRelay SDK for your language:
-
-```bash
-# TypeScript / Node.js
-npm install @northrelay/sdk
-
-# Python
-pip install northrelay
-```
-
-## Plans and Quotas [#plans-and-quotas]
-
-| Tier    | Price | Quota/Day | Custom Domains |
-| ------- | ----- | --------- | -------------- |
-| Free    | $0    | 100       | No             |
-| Starter | $5    | 500       | No             |
-| Micro   | $9    | 1,000     | No             |
-| Pro     | $19   | 10,000    | Yes            |
-| Scale   | $65   | 50,000    | Yes            |
-
-Upgrade anytime from **Dashboard → Billing**.
-
-## Next Steps [#next-steps]
-
-* [Send Your First Email](./first-email) — Detailed examples in multiple languages
-* [DNS Setup Guide](../guides/dns-setup) — Configure SPF, DKIM, and DMARC for better deliverability
-* [SMTP Configuration](../guides/smtp-configuration) — Deep dive into SMTP settings and TLS
-* [Sending Infrastructure](../features/two-pool-system) — How NorthRelay delivers your mail from one protected IP
-
-
-# Introduction to NorthRelay
-
-
-
-# Introduction to NorthRelay [#introduction-to-northrelay]
-
-> What is NorthRelay and why should you use it?
-
-***
-
-## Overview [#overview]
-
-NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
-
-***
-
-## The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
-
-Most email services put thousands of senders on the same IP addresses and let anyone send from any address. If one of them sends spam or gets blacklisted, **your emails suffer too** - your legitimate business email ends up in spam folders because of someone else's bad behavior.
-
-A sending IP is only as trustworthy as the least careful sender allowed on it. The fix is not to hide you on a different IP - it is to make sure nobody on the IP can behave badly.
-
-***
-
-## How NorthRelay Solves It [#how-northrelay-solves-it]
-
-Every NorthRelay message leaves from **one protected sending IP**, and we treat its reputation as our job:
-
-* **Verified senders only** - you can only send from domains you have verified, so nobody can spoof a domain they don't own
-* **Automatic hygiene** - one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
-* **Monitored every hour** - a delivery canary confirms mail is arriving with SPF, DKIM and DMARC passing
-
-Plans differ by quota and features, never by IP. See [Sending Infrastructure](../features/two-pool-system) for details.
-
-***
-
-## Key Features [#key-features]
-
-* 🚀 **Quick Setup** - Send emails in under 5 minutes
-* 🛡️ **Protected Sending IP** - Verified senders only, monitored every hour
-* 🔧 **Self-Service Tools** - Pre-Flight Check, Blocklist Monitor, Connectivity Doctor
-* 📊 **Real-Time Analytics** - See delivery status, bounces, and reputation scores
-* 🔐 **Enterprise Security** - TLS encryption, DKIM signing, DMARC compliance
-
-***
-
-## Next Steps [#next-steps]
-
-* [Installation Guide](./installation)
-* [Send Your First Email](./first-email)
-
-
-# Troubleshooting
-
-
-
-# Troubleshooting [#troubleshooting]
-
-Solutions for common issues when sending email through NorthRelay. If your issue is not covered here, use the diagnostic tools in your Dashboard or contact support.
-
-## Connection Issues [#connection-issues]
-
-### "Connection refused" on port 587 [#connection-refused-on-port-587]
-
-Your network may be blocking outbound SMTP connections.
-
-1. Test connectivity from your server:
-   ```bash
-   telnet smtp.north-pipe.ca 587
-   ```
-2. If the connection times out, your firewall or hosting provider is blocking port 587. Contact your hosting provider or network administrator to allow outbound TCP on port 587.
-3. As a fallback, try port 465 (implicit TLS):
-   ```bash
-   telnet smtp.north-pipe.ca 465
-   ```
-
-### "Connection timed out" [#connection-timed-out]
-
-* Verify the hostname is exactly `smtp.north-pipe.ca` (not `smtp.northrelay.ca`)
-* Check that DNS resolution works: `nslookup smtp.north-pipe.ca`
-* Some cloud providers (AWS, GCP) restrict outbound SMTP by default. You may need to request SMTP access or use an alternative port.
-
-### TLS handshake failure [#tls-handshake-failure]
-
-* Ensure your client supports TLS 1.2 or later
-* Use STARTTLS on port 587 (not raw TLS)
-* For port 465, use implicit TLS (your client should connect with TLS directly)
-* Test the TLS connection manually:
-  ```bash
-  openssl s_client -connect smtp.north-pipe.ca:587 -starttls smtp
-  ```
-
-## Authentication Errors [#authentication-errors]
-
-### "535 Authentication failed" [#535-authentication-failed]
-
-Your credentials are incorrect. Double-check:
-
-1. **Username** must be your full NorthRelay account email (e.g., `you@example.com`), not a custom domain address
-2. **Password** must be a valid API key starting with `nr_live_`
-3. The API key must be active — check **Dashboard → API Keys** to confirm it has not been revoked
-4. Copy the API key again; whitespace or trailing characters can cause failures
-
-### "553 Authentication required" [#553-authentication-required]
-
-You are trying to send without authenticating first. Ensure your SMTP client is configured to use authentication with LOGIN or PLAIN mechanism.
-
-### "API key format invalid" [#api-key-format-invalid]
-
-API keys follow the format `nr_live_xxxxxxxxxxxx`. If your key does not start with `nr_live_`, it may be a test key or an old key format. Generate a new key from **Dashboard → API Keys**.
-
-## Delivery Problems [#delivery-problems]
-
-### Emails landing in spam [#emails-landing-in-spam]
-
-This is almost always caused by missing or incorrect DNS authentication records.
-
-1. **Set up SPF** — Add a TXT record to your domain:
-   ```
-   v=spf1 include:_spf.north-pipe.ca -all
-   ```
-2. **Verify DKIM** — DKIM is auto-configured when you verify your domain in the dashboard. Confirm the DKIM record is published:
-   ```bash
-   dig TXT default._domainkey.yourdomain.com
-   ```
-3. **Add DMARC** — Add a TXT record at `_dmarc.yourdomain.com`:
-   ```
-   v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com
-   ```
-
-See the full [DNS Setup Guide](../guides/dns-setup) for step-by-step instructions.
-
-### Domain not verified [#domain-not-verified]
-
-You must verify domain ownership before sending from a custom domain (Pro tier and above).
-
-1. Go to **Dashboard → Domains**
-2. Add your domain and follow the verification steps
-3. Add the required DNS records (TXT verification record)
-4. Click **Verify** — DNS propagation can take up to 48 hours
-
-### High bounce rate [#high-bounce-rate]
-
-A bounce rate above 5% can harm your sender reputation.
-
-* Remove invalid addresses from your mailing list
-* Use double opt-in for new subscribers
-* Check the bounce reasons in **Dashboard → Email Logs**
-* Monitor your reputation score at **Dashboard → Reputation**
-
-### Emails rejected by recipient server [#emails-rejected-by-recipient-server]
-
-If the recipient's mail server is rejecting your email:
-
-* Check for a specific error code in the bounce message (visible in Email Logs)
-* Run the **Pre-Flight Check** tool: **Dashboard → Tools → Pre-Flight Check**
-* Check the **Blocklist Monitor**: **Dashboard → Tools → Blocklist** — this scans 13 industry-standard RBL providers
-
-## Rate Limiting [#rate-limiting]
-
-### "451 4.7.1 Rate limit exceeded" [#451-471-rate-limit-exceeded]
-
-You have hit your plan's sending quota.
-
-1. Check current usage at **Dashboard → Billing** (the usage bar shows percentage consumed)
-2. Warnings appear at 80% and 100% of your quota
-3. Quota resets at the start of each billing period
-
-| Tier    | Quota/Day |
-| ------- | --------- |
-| Free    | 100       |
-| Starter | 500       |
-| Micro   | 1,000     |
-| Pro     | 10,000    |
-| Scale   | 50,000    |
-
-To increase your quota, upgrade your plan at **Dashboard → Billing**.
-
-### Temporary rate limiting (421) [#temporary-rate-limiting-421]
-
-A `421` response means the server is temporarily throttling your connection. This can happen during high-volume sends.
-
-* Wait 30-60 seconds and retry
-* Implement exponential backoff in your application
-* Spread large sends over a longer time window
-
-## Email Rejected [#email-rejected]
-
-### Spam content detected [#spam-content-detected]
-
-NorthRelay scans outbound email for content that may trigger spam filters. If your email is rejected:
-
-* Avoid excessive use of ALL CAPS, exclamation marks, and spam trigger words
-* Ensure the HTML-to-text ratio is reasonable (include a plain text version)
-* Do not use URL shorteners in email body
-
-### Blocked recipient (suppression list) [#blocked-recipient-suppression-list]
-
-If a recipient previously bounced or marked your email as spam, they may be on your suppression list.
-
-* Check the suppression list in **Dashboard → Email Logs → Suppressions**
-* Remove the address from the suppression list if you believe the issue is resolved
-* Re-sending to suppressed addresses without removing them first will result in a silent drop
-
-## Diagnostic Tools [#diagnostic-tools]
-
-NorthRelay provides built-in tools to diagnose sending issues:
-
-| Tool                    | Location                             | Purpose                                                                          |
-| ----------------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| **Pre-Flight Check**    | Dashboard → Tools → Pre-Flight Check | Validates DNS records, authentication, and sending configuration before you send |
-| **Blocklist Monitor**   | Dashboard → Tools → Blocklist        | Checks your sending IPs against 13 industry-standard DNS blocklist providers     |
-| **Connectivity Doctor** | Dashboard → Tools → Connectivity     | Tests SMTP connectivity and TLS configuration from NorthRelay's servers          |
-
-## Getting Help [#getting-help]
-
-If you are still experiencing issues after trying the steps above:
-
-1. Check the **Dashboard → Email Logs** for detailed error messages
-2. Run the diagnostic tools listed above
-3. Review the [DNS Setup Guide](../guides/dns-setup) and [SMTP Configuration](../guides/smtp-configuration) guides
-4. Contact support at &#x2A;*[support@northrelay.ca](mailto:support@northrelay.ca)** with your account email and the message ID from the Email Logs
-
-
 # DNS Setup Guide
 
 
@@ -6955,6 +6409,552 @@ If you experience issues after installing WP Mail SMTP:
 * [SMTP Configuration](./smtp-configuration) — Full SMTP settings reference and TLS details
 * [DNS Setup Guide](./dns-setup) — Improve deliverability with SPF, DKIM, and DMARC
 * [Troubleshooting](../getting-started/troubleshooting) — General troubleshooting guide
+
+
+# Send Your First Email
+
+
+
+# Send Your First Email [#send-your-first-email]
+
+This guide shows you how to send your first email through NorthRelay using SMTP, the REST API, or one of our SDKs.
+
+Before you begin, make sure you have your SMTP credentials ready. See [Installation & Quick Start](./installation) if you have not set up your account yet.
+
+## Using SMTP [#using-smtp]
+
+### Node.js with Nodemailer [#nodejs-with-nodemailer]
+
+```javascript
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.north-pipe.ca",
+  port: 587,
+  secure: false, // STARTTLS
+  auth: {
+    user: "your-email@example.com",
+    pass: "nr_live_xxxxxxxxxxxx",
+  },
+});
+
+async function sendEmail() {
+  const info = await transporter.sendMail({
+    from: "you@yourdomain.com",
+    to: "recipient@example.com",
+    subject: "Hello from NorthRelay!",
+    text: "This is my first email sent through NorthRelay.",
+    html: "<p>This is my first email sent through <strong>NorthRelay</strong>.</p>",
+  });
+
+  console.log("Message sent:", info.messageId);
+}
+
+sendEmail().catch(console.error);
+```
+
+### Python with smtplib [#python-with-smtplib]
+
+```python
+import smtplib
+from email.mime.text import MIMEText
+
+msg = MIMEText("This is my first email sent through NorthRelay.")
+msg["Subject"] = "Hello from NorthRelay!"
+msg["From"] = "you@yourdomain.com"
+msg["To"] = "recipient@example.com"
+
+with smtplib.SMTP("smtp.north-pipe.ca", 587) as server:
+    server.starttls()
+    server.login("your-email@example.com", "nr_live_xxxxxxxxxxxx")
+    server.send_message(msg)
+
+print("Email sent successfully!")
+```
+
+## Using the REST API [#using-the-rest-api]
+
+Send an email with a single HTTP request. Authenticate with your API key as a Bearer token.
+
+### cURL [#curl]
+
+```bash
+curl -X POST https://app.northrelay.ca/api/v1/emails/send \
+  -H "Authorization: Bearer nr_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "you@yourdomain.com",
+    "to": "recipient@example.com",
+    "subject": "Hello from NorthRelay!",
+    "text": "This is my first email sent through NorthRelay.",
+    "html": "<p>This is my first email sent through <strong>NorthRelay</strong>.</p>"
+  }'
+```
+
+### Example Response [#example-response]
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "msg_abc123def456",
+    "status": "queued",
+    "from": "you@yourdomain.com",
+    "to": "recipient@example.com",
+    "subject": "Hello from NorthRelay!"
+  }
+}
+```
+
+## Using the TypeScript SDK [#using-the-typescript-sdk]
+
+```bash
+npm install @northrelay/sdk
+```
+
+```typescript
+import { NorthRelay } from "@northrelay/sdk";
+
+const northrelay = new NorthRelay({
+  apiKey: "nr_live_xxxxxxxxxxxx",
+});
+
+async function main() {
+  const result = await northrelay.emails.send({
+    from: "you@yourdomain.com",
+    to: "recipient@example.com",
+    subject: "Hello from NorthRelay!",
+    text: "This is my first email sent through NorthRelay.",
+  });
+
+  console.log("Email sent:", result.id);
+}
+
+main();
+```
+
+## Using the Python SDK [#using-the-python-sdk]
+
+```bash
+pip install northrelay
+```
+
+```python
+from northrelay import NorthRelay
+
+client = NorthRelay(api_key="nr_live_xxxxxxxxxxxx")
+
+result = client.emails.send(
+    from_address="you@yourdomain.com",
+    to="recipient@example.com",
+    subject="Hello from NorthRelay!",
+    text="This is my first email sent through NorthRelay.",
+)
+
+print(f"Email sent: {result.id}")
+```
+
+## Verifying Delivery [#verifying-delivery]
+
+After sending your first email, verify it was delivered successfully:
+
+### 1. Check Dashboard Logs [#1-check-dashboard-logs]
+
+Go to **Dashboard → Email Logs**. You should see your email with one of these statuses:
+
+| Status      | Meaning                                         |
+| ----------- | ----------------------------------------------- |
+| `queued`    | Email accepted and waiting to be sent           |
+| `sent`      | Email handed off to the recipient's mail server |
+| `delivered` | Recipient's server confirmed receipt            |
+| `bounced`   | Recipient's server rejected the email           |
+| `failed`    | A sending error occurred                        |
+
+### 2. Check the Recipient's Inbox [#2-check-the-recipients-inbox]
+
+Look in both the inbox and the spam/junk folder. If the email lands in spam, you likely need to set up DNS authentication records. See the [DNS Setup Guide](../guides/dns-setup).
+
+### 3. Common Status Codes [#3-common-status-codes]
+
+| SMTP Code | Meaning                 | Action                                  |
+| --------- | ----------------------- | --------------------------------------- |
+| `250`     | Success                 | Email accepted                          |
+| `421`     | Service unavailable     | Retry in a few minutes                  |
+| `451`     | Rate limit exceeded     | Check your quota in Dashboard → Billing |
+| `550`     | Mailbox not found       | Verify the recipient address            |
+| `553`     | Authentication required | Check your credentials                  |
+
+## Troubleshooting Quick Tips [#troubleshooting-quick-tips]
+
+**Authentication error (535)**
+
+* Verify your username is your full account email, not a custom domain address
+* Confirm you are using an API key (starts with `nr_live_`) as the password
+* Check that the API key has not been revoked in Dashboard → API Keys
+
+**Connection refused**
+
+* Ensure your network allows outbound connections on port 587
+* Test connectivity: `telnet smtp.north-pipe.ca 587`
+* If port 587 is blocked, try port 465 (implicit TLS)
+
+**Email bounced**
+
+* Check that the recipient address is valid
+* Set up SPF, DKIM, and DMARC records for your sending domain — see the [DNS Setup Guide](../guides/dns-setup)
+* Review the bounce reason in Dashboard → Email Logs
+
+For more detailed troubleshooting, see the [Troubleshooting Guide](./troubleshooting).
+
+## Next Steps [#next-steps]
+
+* [DNS Setup Guide](../guides/dns-setup) — Improve deliverability with SPF, DKIM, and DMARC
+* [Node.js Integration](../guides/nodejs-integration) — Full Node.js integration with error handling
+* [Python Integration](../guides/python-integration) — Django, Flask, and FastAPI examples
+* [SMTP Configuration](../guides/smtp-configuration) — Advanced SMTP settings and TLS options
+
+
+# Installation & Quick Start
+
+
+
+# Installation & Quick Start [#installation--quick-start]
+
+Get up and running with NorthRelay in 5 minutes. This guide walks you through creating an account, obtaining credentials, and sending your first email.
+
+## Prerequisites [#prerequisites]
+
+* An email address to create your NorthRelay account
+* An application that sends email (WordPress, Node.js, Python, or any SMTP-capable tool)
+
+## Step 1: Create an Account [#step-1-create-an-account]
+
+1. Go to [northrelay.ca/signup](https://northrelay.ca/signup)
+2. Enter your email address and create a password
+3. Check your inbox for a 6-digit verification code
+4. Enter the code on the verification page (code expires after 15 minutes)
+
+Your account starts on the **Free** tier with 100 emails per day at no cost.
+
+## Step 2: Get Your SMTP Credentials [#step-2-get-your-smtp-credentials]
+
+After logging in, navigate to **Dashboard → API Keys** and click **Create API Key**.
+
+Your API key acts as both your API token and your SMTP password. Copy it immediately — it will not be shown again.
+
+| Setting        | Value                                        |
+| -------------- | -------------------------------------------- |
+| **SMTP Host**  | `smtp.north-pipe.ca`                         |
+| **SMTP Port**  | `587` (STARTTLS)                             |
+| **Username**   | Your account email (e.g., `you@example.com`) |
+| **Password**   | Your API key (e.g., `nr_live_xxxxxxxxxxxx`)  |
+| **Encryption** | STARTTLS                                     |
+
+## Step 3: Configure Your Application [#step-3-configure-your-application]
+
+Use the SMTP settings above in your application. We have detailed integration guides for popular platforms:
+
+* [Node.js (Nodemailer / SDK)](../guides/nodejs-integration)
+* [Python (smtplib / SDK)](../guides/python-integration)
+* [WordPress (WP Mail SMTP)](../guides/wordpress-integration)
+* [Generic SMTP Configuration](../guides/smtp-configuration)
+
+## Step 4: Send a Test Email [#step-4-send-a-test-email]
+
+You can send a test email using either SMTP or the REST API.
+
+### Option A: SMTP with swaks [#option-a-smtp-with-swaks]
+
+```bash
+swaks --to recipient@example.com \
+      --from you@yourdomain.com \
+      --server smtp.north-pipe.ca:587 \
+      --auth LOGIN \
+      --auth-user your-email@example.com \
+      --auth-password nr_live_xxxxxxxxxxxx \
+      --tls \
+      --header "Subject: NorthRelay Test" \
+      --body "Hello from NorthRelay!"
+```
+
+Install swaks on Ubuntu/Debian with `sudo apt install swaks`, or on macOS with `brew install swaks`.
+
+### Option B: REST API with cURL [#option-b-rest-api-with-curl]
+
+```bash
+curl -X POST https://app.northrelay.ca/api/v1/emails/send \
+  -H "Authorization: Bearer nr_live_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "you@yourdomain.com",
+    "to": "recipient@example.com",
+    "subject": "NorthRelay Test",
+    "text": "Hello from NorthRelay!"
+  }'
+```
+
+## Step 5: Verify Delivery [#step-5-verify-delivery]
+
+1. Go to **Dashboard → Email Logs** to see the status of your test email
+2. Look for a `delivered` status — this confirms the email reached the recipient's mail server
+3. Check the recipient's inbox (and spam folder) to confirm delivery
+
+If the email shows a `bounced` or `failed` status, check the error message in the log entry for details.
+
+## SDK Installation (Optional) [#sdk-installation-optional]
+
+For a more integrated experience, install the NorthRelay SDK for your language:
+
+```bash
+# TypeScript / Node.js
+npm install @northrelay/sdk
+
+# Python
+pip install northrelay
+```
+
+## Plans and Quotas [#plans-and-quotas]
+
+| Tier    | Price | Quota/Day | Custom Domains |
+| ------- | ----- | --------- | -------------- |
+| Free    | $0    | 100       | No             |
+| Starter | $5    | 500       | No             |
+| Micro   | $9    | 1,000     | No             |
+| Pro     | $19   | 10,000    | Yes            |
+| Scale   | $65   | 50,000    | Yes            |
+
+Upgrade anytime from **Dashboard → Billing**.
+
+## Next Steps [#next-steps]
+
+* [Send Your First Email](./first-email) — Detailed examples in multiple languages
+* [DNS Setup Guide](../guides/dns-setup) — Configure SPF, DKIM, and DMARC for better deliverability
+* [SMTP Configuration](../guides/smtp-configuration) — Deep dive into SMTP settings and TLS
+* [Sending Infrastructure](../features/two-pool-system) — How NorthRelay delivers your mail from one protected IP
+
+
+# Introduction to NorthRelay
+
+
+
+# Introduction to NorthRelay [#introduction-to-northrelay]
+
+> What is NorthRelay and why should you use it?
+
+***
+
+## Overview [#overview]
+
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
+
+***
+
+## The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
+
+Most email services put thousands of senders on the same IP addresses and let anyone send from any address. If one of them sends spam or gets blacklisted, **your emails suffer too** - your legitimate business email ends up in spam folders because of someone else's bad behavior.
+
+A sending IP is only as trustworthy as the least careful sender allowed on it. The fix is not to hide you on a different IP - it is to make sure nobody on the IP can behave badly.
+
+***
+
+## How NorthRelay Solves It [#how-northrelay-solves-it]
+
+Every NorthRelay message leaves from **one protected sending IP**, and we treat its reputation as our job:
+
+* **Verified senders only** - you can only send from domains you have verified, so nobody can spoof a domain they don't own
+* **Automatic hygiene** - one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
+* **Monitored every hour** - a delivery canary confirms mail is arriving with SPF, DKIM and DMARC passing
+
+Plans differ by quota and features, never by IP. See [Sending Infrastructure](../features/two-pool-system) for details.
+
+***
+
+## Key Features [#key-features]
+
+* 🚀 **Quick Setup** - Send emails in under 5 minutes
+* 🛡️ **Protected Sending IP** - Verified senders only, monitored every hour
+* 🔧 **Self-Service Tools** - Pre-Flight Check, Blocklist Monitor, Connectivity Doctor
+* 📊 **Real-Time Analytics** - See delivery status, bounces, and reputation scores
+* 🔐 **Enterprise Security** - TLS encryption, DKIM signing, DMARC compliance
+
+***
+
+## Next Steps [#next-steps]
+
+* [Installation Guide](./installation)
+* [Send Your First Email](./first-email)
+
+
+# Troubleshooting
+
+
+
+# Troubleshooting [#troubleshooting]
+
+Solutions for common issues when sending email through NorthRelay. If your issue is not covered here, use the diagnostic tools in your Dashboard or contact support.
+
+## Connection Issues [#connection-issues]
+
+### "Connection refused" on port 587 [#connection-refused-on-port-587]
+
+Your network may be blocking outbound SMTP connections.
+
+1. Test connectivity from your server:
+   ```bash
+   telnet smtp.north-pipe.ca 587
+   ```
+2. If the connection times out, your firewall or hosting provider is blocking port 587. Contact your hosting provider or network administrator to allow outbound TCP on port 587.
+3. As a fallback, try port 465 (implicit TLS):
+   ```bash
+   telnet smtp.north-pipe.ca 465
+   ```
+
+### "Connection timed out" [#connection-timed-out]
+
+* Verify the hostname is exactly `smtp.north-pipe.ca` (not `smtp.northrelay.ca`)
+* Check that DNS resolution works: `nslookup smtp.north-pipe.ca`
+* Some cloud providers (AWS, GCP) restrict outbound SMTP by default. You may need to request SMTP access or use an alternative port.
+
+### TLS handshake failure [#tls-handshake-failure]
+
+* Ensure your client supports TLS 1.2 or later
+* Use STARTTLS on port 587 (not raw TLS)
+* For port 465, use implicit TLS (your client should connect with TLS directly)
+* Test the TLS connection manually:
+  ```bash
+  openssl s_client -connect smtp.north-pipe.ca:587 -starttls smtp
+  ```
+
+## Authentication Errors [#authentication-errors]
+
+### "535 Authentication failed" [#535-authentication-failed]
+
+Your credentials are incorrect. Double-check:
+
+1. **Username** must be your full NorthRelay account email (e.g., `you@example.com`), not a custom domain address
+2. **Password** must be a valid API key starting with `nr_live_`
+3. The API key must be active — check **Dashboard → API Keys** to confirm it has not been revoked
+4. Copy the API key again; whitespace or trailing characters can cause failures
+
+### "553 Authentication required" [#553-authentication-required]
+
+You are trying to send without authenticating first. Ensure your SMTP client is configured to use authentication with LOGIN or PLAIN mechanism.
+
+### "API key format invalid" [#api-key-format-invalid]
+
+API keys follow the format `nr_live_xxxxxxxxxxxx`. If your key does not start with `nr_live_`, it may be a test key or an old key format. Generate a new key from **Dashboard → API Keys**.
+
+## Delivery Problems [#delivery-problems]
+
+### Emails landing in spam [#emails-landing-in-spam]
+
+This is almost always caused by missing or incorrect DNS authentication records.
+
+1. **Set up SPF** — Add a TXT record to your domain:
+   ```
+   v=spf1 include:_spf.north-pipe.ca -all
+   ```
+2. **Verify DKIM** — DKIM is auto-configured when you verify your domain in the dashboard. Confirm the DKIM record is published:
+   ```bash
+   dig TXT default._domainkey.yourdomain.com
+   ```
+3. **Add DMARC** — Add a TXT record at `_dmarc.yourdomain.com`:
+   ```
+   v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com
+   ```
+
+See the full [DNS Setup Guide](../guides/dns-setup) for step-by-step instructions.
+
+### Domain not verified [#domain-not-verified]
+
+You must verify domain ownership before sending from a custom domain (Pro tier and above).
+
+1. Go to **Dashboard → Domains**
+2. Add your domain and follow the verification steps
+3. Add the required DNS records (TXT verification record)
+4. Click **Verify** — DNS propagation can take up to 48 hours
+
+### High bounce rate [#high-bounce-rate]
+
+A bounce rate above 5% can harm your sender reputation.
+
+* Remove invalid addresses from your mailing list
+* Use double opt-in for new subscribers
+* Check the bounce reasons in **Dashboard → Email Logs**
+* Monitor your reputation score at **Dashboard → Reputation**
+
+### Emails rejected by recipient server [#emails-rejected-by-recipient-server]
+
+If the recipient's mail server is rejecting your email:
+
+* Check for a specific error code in the bounce message (visible in Email Logs)
+* Run the **Pre-Flight Check** tool: **Dashboard → Tools → Pre-Flight Check**
+* Check the **Blocklist Monitor**: **Dashboard → Tools → Blocklist** — this scans 13 industry-standard RBL providers
+
+## Rate Limiting [#rate-limiting]
+
+### "451 4.7.1 Rate limit exceeded" [#451-471-rate-limit-exceeded]
+
+You have hit your plan's sending quota.
+
+1. Check current usage at **Dashboard → Billing** (the usage bar shows percentage consumed)
+2. Warnings appear at 80% and 100% of your quota
+3. Quota resets at the start of each billing period
+
+| Tier    | Quota/Day |
+| ------- | --------- |
+| Free    | 100       |
+| Starter | 500       |
+| Micro   | 1,000     |
+| Pro     | 10,000    |
+| Scale   | 50,000    |
+
+To increase your quota, upgrade your plan at **Dashboard → Billing**.
+
+### Temporary rate limiting (421) [#temporary-rate-limiting-421]
+
+A `421` response means the server is temporarily throttling your connection. This can happen during high-volume sends.
+
+* Wait 30-60 seconds and retry
+* Implement exponential backoff in your application
+* Spread large sends over a longer time window
+
+## Email Rejected [#email-rejected]
+
+### Spam content detected [#spam-content-detected]
+
+NorthRelay scans outbound email for content that may trigger spam filters. If your email is rejected:
+
+* Avoid excessive use of ALL CAPS, exclamation marks, and spam trigger words
+* Ensure the HTML-to-text ratio is reasonable (include a plain text version)
+* Do not use URL shorteners in email body
+
+### Blocked recipient (suppression list) [#blocked-recipient-suppression-list]
+
+If a recipient previously bounced or marked your email as spam, they may be on your suppression list.
+
+* Check the suppression list in **Dashboard → Email Logs → Suppressions**
+* Remove the address from the suppression list if you believe the issue is resolved
+* Re-sending to suppressed addresses without removing them first will result in a silent drop
+
+## Diagnostic Tools [#diagnostic-tools]
+
+NorthRelay provides built-in tools to diagnose sending issues:
+
+| Tool                    | Location                             | Purpose                                                                          |
+| ----------------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
+| **Pre-Flight Check**    | Dashboard → Tools → Pre-Flight Check | Validates DNS records, authentication, and sending configuration before you send |
+| **Blocklist Monitor**   | Dashboard → Tools → Blocklist        | Checks your sending IPs against 13 industry-standard DNS blocklist providers     |
+| **Connectivity Doctor** | Dashboard → Tools → Connectivity     | Tests SMTP connectivity and TLS configuration from NorthRelay's servers          |
+
+## Getting Help [#getting-help]
+
+If you are still experiencing issues after trying the steps above:
+
+1. Check the **Dashboard → Email Logs** for detailed error messages
+2. Run the diagnostic tools listed above
+3. Review the [DNS Setup Guide](../guides/dns-setup) and [SMTP Configuration](../guides/smtp-configuration) guides
+4. Contact support at &#x2A;*[support@northrelay.ca](mailto:support@northrelay.ca)** with your account email and the message ID from the Email Logs
 
 
 # Acceptable Use Policy
