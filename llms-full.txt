@@ -1,60 +1,3 @@
-# Welcome to NorthRelay Documentation
-
-
-
-# Welcome to NorthRelay [#welcome-to-northrelay]
-
-NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
-
-## Quick Links [#quick-links]
-
-<Cards>
-  <Card title="Getting Started" href="/docs/getting-started/introduction">
-    Learn what NorthRelay is and how it works
-  </Card>
-
-  <Card title="Send Your First Email" href="/docs/getting-started/first-email">
-    Set up NorthRelay and send an email in 5 minutes
-  </Card>
-
-  <Card title="API Reference" href="/docs/api-reference/introduction">
-    REST API endpoints, authentication, and error handling
-  </Card>
-
-  <Card title="SDKs" href="/docs/sdks/typescript">
-    Official TypeScript, Python, and MCP Server libraries
-  </Card>
-</Cards>
-
-## Why NorthRelay? [#why-northrelay]
-
-### The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
-
-Most email services put thousands of senders on the same IP addresses and let anyone send from anything. If one of them sends spam, **your emails suffer too**.
-
-### The NorthRelay Solution [#the-northrelay-solution]
-
-Every NorthRelay message leaves from **one protected sending IP** — and we keep it clean so you don't have to:
-
-* **Verified senders only** — you can only send from domains you have verified, so nobody can pollute the IP with spoofed mail
-* **Automatic hygiene** — one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
-* **Monitored every hour** — a delivery canary confirms mail is landing with SPF, DKIM and DMARC passing
-
-Plans differ by quota and features, never by IP. Upgrading changes your limits immediately with no code or DNS changes. See [Sending Infrastructure](/docs/features/two-pool-system).
-
-## Integration Options [#integration-options]
-
-| Method             | Best For                                   | Docs                                                  |
-| ------------------ | ------------------------------------------ | ----------------------------------------------------- |
-| **REST API**       | Full-featured integration                  | [API Reference](/docs/api-reference/introduction)     |
-| **SMTP**           | Drop-in replacement for existing providers | [SMTP Configuration](/docs/guides/smtp-configuration) |
-| **TypeScript SDK** | Node.js / TypeScript apps                  | [TypeScript SDK](/docs/sdks/typescript)               |
-| **Python SDK**     | Python / FastAPI / Django apps             | [Python SDK](/docs/sdks/python)                       |
-| **MCP Server**     | AI agents (Claude, Cursor, etc.)           | [MCP Server](/docs/sdks/mcp-server)                   |
-
-[Get Started →](/docs/getting-started/introduction)
-
-
 # Analytics API
 
 
@@ -5778,7 +5721,7 @@ If you are still experiencing issues after trying the steps above:
 1. Check the **Dashboard → Email Logs** for detailed error messages
 2. Run the diagnostic tools listed above
 3. Review the [DNS Setup Guide](../guides/dns-setup) and [SMTP Configuration](../guides/smtp-configuration) guides
-4. Contact support at &#x2A;*[support@northrelay.ca](mailto:support@northrelay.ca)** with your account email and the message ID from the Email Logs
+4. Contact support at **[support@northrelay.ca](mailto:support@northrelay.ca)** with your account email and the message ID from the Email Logs
 
 
 # DNS Setup Guide
@@ -6938,7 +6881,7 @@ Once configured, **all** WordPress emails will route through NorthRelay, includi
 
 If the SMTP connection fails, WordPress may silently fall back to PHP `mail()`. To prevent this:
 
-1. In WP Mail SMTP, ensure the mailer is set to **Other SMTP** (not &#x2A;*Default (PHP)**
+1. In WP Mail SMTP, ensure the mailer is set to **Other SMTP** (not **Default (PHP)**
 2. Use the email test tool to confirm SMTP is working
 3. Monitor deliveries in NorthRelay **Dashboard → Email Logs** — if emails stop appearing there, the fallback may have activated
 
@@ -6955,6 +6898,63 @@ If you experience issues after installing WP Mail SMTP:
 * [SMTP Configuration](./smtp-configuration) — Full SMTP settings reference and TLS details
 * [DNS Setup Guide](./dns-setup) — Improve deliverability with SPF, DKIM, and DMARC
 * [Troubleshooting](../getting-started/troubleshooting) — General troubleshooting guide
+
+
+# Welcome to NorthRelay Documentation
+
+
+
+# Welcome to NorthRelay [#welcome-to-northrelay]
+
+NorthRelay is a **sovereign SMTP infrastructure** designed for developers who need reliable email delivery with a sending reputation we actively protect.
+
+## Quick Links [#quick-links]
+
+<Cards>
+  <Card title="Getting Started" href="/docs/getting-started/introduction">
+    Learn what NorthRelay is and how it works
+  </Card>
+
+  <Card title="Send Your First Email" href="/docs/getting-started/first-email">
+    Set up NorthRelay and send an email in 5 minutes
+  </Card>
+
+  <Card title="API Reference" href="/docs/api-reference/introduction">
+    REST API endpoints, authentication, and error handling
+  </Card>
+
+  <Card title="SDKs" href="/docs/sdks/typescript">
+    Official TypeScript, Python, and MCP Server libraries
+  </Card>
+</Cards>
+
+## Why NorthRelay? [#why-northrelay]
+
+### The problem with unpoliced shared IPs [#the-problem-with-unpoliced-shared-ips]
+
+Most email services put thousands of senders on the same IP addresses and let anyone send from anything. If one of them sends spam, **your emails suffer too**.
+
+### The NorthRelay Solution [#the-northrelay-solution]
+
+Every NorthRelay message leaves from **one protected sending IP** — and we keep it clean so you don't have to:
+
+* **Verified senders only** — you can only send from domains you have verified, so nobody can pollute the IP with spoofed mail
+* **Automatic hygiene** — one-click unsubscribe on every campaign, plus automatic bounce and complaint suppression
+* **Monitored every hour** — a delivery canary confirms mail is landing with SPF, DKIM and DMARC passing
+
+Plans differ by quota and features, never by IP. Upgrading changes your limits immediately with no code or DNS changes. See [Sending Infrastructure](/docs/features/two-pool-system).
+
+## Integration Options [#integration-options]
+
+| Method             | Best For                                   | Docs                                                  |
+| ------------------ | ------------------------------------------ | ----------------------------------------------------- |
+| **REST API**       | Full-featured integration                  | [API Reference](/docs/api-reference/introduction)     |
+| **SMTP**           | Drop-in replacement for existing providers | [SMTP Configuration](/docs/guides/smtp-configuration) |
+| **TypeScript SDK** | Node.js / TypeScript apps                  | [TypeScript SDK](/docs/sdks/typescript)               |
+| **Python SDK**     | Python / FastAPI / Django apps             | [Python SDK](/docs/sdks/python)                       |
+| **MCP Server**     | AI agents (Claude, Cursor, etc.)           | [MCP Server](/docs/sdks/mcp-server)                   |
+
+[Get Started →](/docs/getting-started/introduction)
 
 
 # Acceptable Use Policy
@@ -8832,7 +8832,7 @@ The Model Context Protocol (MCP) is an open standard that lets AI applications i
 * Any MCP-compatible client
 
 The server runs in one of two modes. Over **stdio** the client starts it
-locally and gives it your NorthRelay API key. In &#x2A;*hosted (HTTP)** mode one
+locally and gives it your NorthRelay API key. In **hosted (HTTP)** mode one
 running instance serves a team over the network, callers present a bearer
 token, and the API key stays on the host. See [Hosted mode](#hosted-mode).
 
@@ -8941,8 +8941,8 @@ bearer_token_env_var = "NORTHRELAY_MCP_AUTH_TOKEN"
 Add the following to your Claude Desktop configuration file:
 
 **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-&#x2A;*Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-&#x2A;*Linux:** `~/.config/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
