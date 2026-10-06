@@ -841,15 +841,15 @@ DELETE /contacts/lists/{id}/contacts
 
 Custom sending domains let you send emails from your own domain (e.g., `hello@yourdomain.com`) instead of a NorthRelay system subdomain. Custom domains require proper DNS configuration for SPF, DKIM, and DMARC.
 
-**Tier requirement:** Custom domains are available on Pro ($19/mo) and above. Free, Starter, and Micro tiers cannot add custom domains.
+**Tier requirement:** Custom domains are available on Starter ($5/mo) and above. The Free tier sends from a NorthRelay system subdomain only.
 
 | Tier       | Custom Domain Limit |
 | ---------- | ------------------- |
 | Free       | 0                   |
-| Starter    | 0                   |
-| Micro      | 0                   |
-| Pro        | 1                   |
-| Scale      | 5                   |
+| Starter    | 1                   |
+| Micro      | 2                   |
+| Pro        | 5                   |
+| Scale      | 20                  |
 | Enterprise | Unlimited           |
 
 ## List Domains [#list-domains]
@@ -1191,17 +1191,17 @@ Create and manage keys in **Dashboard > Settings > API Keys**. See the [Authenti
 
 ## Rate Limits [#rate-limits]
 
-Rate limits are enforced per-account based on your plan tier. Limits are expressed as daily email quotas:
+Sending quotas are enforced per account based on your plan tier. They are expressed as recipients per calendar month and reset on the 1st:
 
-| Tier    | Daily Quota | Price  |
-| ------- | ----------- | ------ |
-| Free    | 100         | Free   |
-| Starter | 500         | $5/mo  |
-| Micro   | 1,000       | $9/mo  |
-| Pro     | 10,000      | $19/mo |
-| Scale   | 50,000      | $65/mo |
+| Tier    | Monthly Quota | Price (CAD) |
+| ------- | ------------- | ----------- |
+| Free    | 3,000         | Free        |
+| Starter | 5,000         | $5/mo       |
+| Micro   | 20,000        | $12/mo      |
+| Pro     | 50,000        | $29/mo      |
+| Scale   | 150,000       | $79/mo      |
 
-When you exceed your quota, the API returns a `429` status with the `RATE_LIMIT_EXCEEDED` error code. The response includes a `Retry-After` header indicating when you can resume sending.
+When you exceed your monthly quota, the API returns a `429` status with the `QUOTA_EXCEEDED` error code and the date the counter resets. Upgrading raises the limit immediately.
 
 API request rate limits (separate from email quotas):
 
@@ -3829,7 +3829,7 @@ Webhook destinations must use HTTPS on port 443, without credentials in the URL,
 
 Webhooks deliver real-time HTTP POST notifications to your server when email events occur (delivery, bounce, open, click, etc.). Use webhooks to update your application state, trigger workflows, or monitor deliverability.
 
-**Tier requirement:** Webhooks are available on Pro ($19/mo) and above.
+**Tier requirement:** Webhooks are available on Starter ($5/mo) and above: 1 endpoint on Starter, 3 on Micro, 10 on Pro, unlimited on Scale.
 
 ## Event Types [#event-types]
 
@@ -4189,31 +4189,31 @@ Yes. You can upgrade or downgrade your plan at any time from **Dashboard > Billi
 
 ### Is my billing prorated when I upgrade? [#is-my-billing-prorated-when-i-upgrade]
 
-Yes. When you upgrade mid-cycle, you are charged the prorated difference for the remaining days in your billing period. For example, if you upgrade from Micro ($5/mo) to Pro ($19/mo) halfway through your cycle, you pay approximately $7 for the remaining half-month.
+Yes. When you upgrade mid-cycle, you are charged the prorated difference for the remaining days in your billing period. For example, if you upgrade from Micro ($12/mo) to Pro ($29/mo) halfway through your cycle, you pay approximately $8.50 for the remaining half-month.
 
 ### Is my billing prorated when I downgrade? [#is-my-billing-prorated-when-i-downgrade]
 
 No. Downgrades take effect at the end of your current billing cycle. You are not refunded for the remaining days on your current plan, but you retain full access to your current tier's features until the cycle ends.
 
-### What happens to my custom domains if I downgrade below Pro? [#what-happens-to-my-custom-domains-if-i-downgrade-below-pro]
+### What happens to my custom domains if I downgrade? [#what-happens-to-my-custom-domains-if-i-downgrade]
 
-Custom domains are a Pro+ feature. If you downgrade to Micro or Free:
+Custom domains are a Starter+ feature, and each tier allows a different number (1 / 2 / 5 / 20). If you downgrade to Free, or to a tier with fewer domains than you have:
 
-* Your custom domains are **deactivated** (not deleted) at the end of the billing cycle
-* Emails will send from your NorthRelay system subdomain instead
+* Domains above the new limit are **deactivated** (not deleted) at the end of the billing cycle
+* Emails from a deactivated domain are rejected with `FORBIDDEN_SENDER`; use a remaining verified domain or your NorthRelay system subdomain instead
 * Your domain configuration is preserved -- if you upgrade again, your domains reactivate without needing to re-verify DNS
 
-### What happens to my webhooks if I downgrade below Pro? [#what-happens-to-my-webhooks-if-i-downgrade-below-pro]
+### What happens to my webhooks if I downgrade? [#what-happens-to-my-webhooks-if-i-downgrade]
 
-Webhooks are a Pro+ feature. If you downgrade:
+Webhooks are a Starter+ feature with a per-tier count (1 / 3 / 10 / unlimited). If you downgrade below your current count:
 
-* Webhook endpoints are **paused** at the end of the billing cycle
+* Webhook endpoints above the new limit are **paused** at the end of the billing cycle
 * No events are delivered while paused
 * Webhook configurations are preserved -- upgrading reactivates them
 
-### What happens to my team members if I downgrade below Scale? [#what-happens-to-my-team-members-if-i-downgrade-below-scale]
+### What happens to my team members if I downgrade below Pro? [#what-happens-to-my-team-members-if-i-downgrade-below-pro]
 
-Team members are a Scale+ feature. If you downgrade:
+Team members are a Pro+ feature. If you downgrade:
 
 * Team member access is **revoked** at the end of the billing cycle
 * Team member accounts are preserved -- upgrading restores their access
@@ -4248,7 +4248,7 @@ NorthRelay accepts Visa, Mastercard, and American Express credit and debit cards
 
 ### What currency are charges in? [#what-currency-are-charges-in]
 
-All charges are in **USD** (US Dollars).
+All charges are in **CAD** (Canadian dollars). Prices are tax-exclusive; GST/HST and, for Québec, QST are added at checkout.
 
 ### When am I charged? [#when-am-i-charged]
 
@@ -4291,11 +4291,11 @@ Email [support@northrelay.ca](mailto:support@northrelay.ca) with your account em
 
 The Free tier includes:
 
-* 100 emails per day
+* 3,000 emails per month
 * Sends from a NorthRelay system subdomain only (no custom domains)
 * No inbox access
-* 5 templates, 1 contact list
-* No webhooks or team features
+* Full API and SDK access
+* No webhooks, campaigns or team features
 
 There is no time limit on the Free tier. You can use it indefinitely.
 
@@ -4454,101 +4454,105 @@ To resolve a failed payment:
 
 # Plans & Pricing [#plans--pricing]
 
-NorthRelay offers five tiers designed to match your sending volume and feature needs. All paid plans include a 14-day free trial.
+NorthRelay offers five self-service tiers plus Enterprise. Prices are in **Canadian dollars per month**, tax-exclusive (GST/HST and QST are added at checkout). Sending quotas are **per calendar month** and reset on the 1st. The Micro plan includes a 14-day free trial.
 
 ## Plan Comparison [#plan-comparison]
 
-| Feature              | Free | Starter | Micro | Pro       | Scale     | Enterprise |
-| -------------------- | ---- | ------- | ----- | --------- | --------- | ---------- |
-| **Price**            | Free | $5/mo   | $9/mo | $19/mo    | $65/mo    | Custom     |
-| **Emails/Day**       | 100  | 500     | 1,000 | 10,000    | 50,000    | Custom     |
-| **Custom Domains**   | --   | --      | --    | Yes       | Yes       | Yes        |
-| **Inbox Access**     | --   | Yes     | Yes   | Yes       | Yes       | Yes        |
-| **Inbox Storage**    | --   | 500 MB  | 1 GB  | 2 GB      | 5 GB      | Custom     |
-| **Webhooks**         | --   | --      | --    | Yes       | Yes       | Yes        |
-| **Team Members**     | --   | --      | --    | --        | Yes       | Yes        |
-| **API Access**       | Yes  | Yes     | Yes   | Yes       | Yes       | Yes        |
-| **Templates**        | 5    | 25      | 25    | Unlimited | Unlimited | Unlimited  |
-| **Contact Lists**    | 1    | 5       | 5     | Unlimited | Unlimited | Unlimited  |
-| **Priority Support** | --   | --      | --    | --        | --        | Yes        |
-| **Custom SLA**       | --   | --      | --    | --        | --        | Yes        |
+| Feature                              | Free       | Starter | Micro   | Pro      | Scale            | Enterprise   |
+| ------------------------------------ | ---------- | ------- | ------- | -------- | ---------------- | ------------ |
+| **Price (CAD/mo)**                   | Free       | $5      | $12     | $29      | $79              | Custom       |
+| **Emails / month**                   | 3,000      | 5,000   | 20,000  | 50,000   | 150,000          | Custom       |
+| **Custom domains**                   | --         | 1       | 2       | 5        | 20               | Unlimited    |
+| **Inbox (JMAP + IMAP)**              | --         | 1 GB    | 2 GB    | 5 GB     | 20 GB            | 50 GB        |
+| **Aliases**                          | --         | 3       | 10      | 25       | Unlimited        | Unlimited    |
+| **Inbox users**                      | --         | --      | 1       | 5        | 25               | Unlimited    |
+| **Catch-all**                        | --         | --      | --      | Yes      | Yes              | Yes          |
+| **Campaigns, templates, scheduling** | --         | --      | Yes     | Yes      | Yes              | Yes          |
+| **Webhooks**                         | --         | 1       | 3       | 10       | Unlimited        | Unlimited    |
+| **Team members**                     | --         | --      | --      | 3        | 10               | Unlimited    |
+| **API rate limit**                   | 10 req/min | 30      | 60      | 120      | 300              | Custom       |
+| **Log retention**                    | 1 day      | 7 days  | 30 days | 90 days  | 1 year           | 1 year+      |
+| **Analytics**                        | 7 days     | 30 days | 90 days | 1 year   | 1 year           | 1 year+      |
+| **Support**                          | Docs       | Email   | Email   | Priority | Priority + Slack | Dedicated AM |
+| **Custom SLA**                       | --         | --      | --      | --       | --               | Yes          |
+
+## Included on every plan [#included-on-every-plan]
+
+* **Hosted in Canada, billed in CAD.** Relay, mailbox and dashboard run on Canadian servers.
+* **REST API, TypeScript and Python SDKs, OpenAPI spec and an MCP server.**
+* **One clean, monitored sending IP.** Only verified sender domains can send; campaigns carry one-click unsubscribe; bounces and complaints are suppressed automatically.
+* **Deliverability tooling:** blocklist monitor (13 RBLs), DNS and pre-flight checks, link scanner, reputation score with incident alerts.
+* **DMARC and TLS-RPT ingestion** for your domains, attributed to your account.
+* **Hourly delivery canary** that sends a real message through the relay and reads back its SPF, DKIM and DMARC verdicts.
 
 ## Free [#free]
 
 The Free tier is for testing and evaluation. No credit card required.
 
-* **100 emails per day** -- enough to test your integration
+* **3,000 emails per month**
 * Sends from a NorthRelay system subdomain (`yourname.north-pipe.ca`)
-* No inbox access
-* Full API access with 5 templates and 1 contact list
-* No custom domains, webhooks, or team features
+* Full API and SDK access
+* No inbox, custom domains, webhooks or team features
 
 **Best for:** Developers evaluating NorthRelay, personal projects, proof-of-concept integrations.
 
 ## Starter ($5/month) [#starter-5month]
 
-The Starter tier adds inbox access at low cost.
+Your own domain, a small inbox and an API, for less than most hosted mailboxes.
 
-* **500 emails per day**
-* Sends from a NorthRelay system subdomain (no custom domains)
-* Inbox access with 500 MB storage
-* 25 templates and 5 contact lists
-* No custom domains, webhooks, or team features
+* **5,000 emails per month**
+* **1 custom domain** with full SPF/DKIM/DMARC alignment
+* Inbox with 1 GB storage, JMAP and IMAP access, 3 aliases
+* 1 webhook
+* 30-day analytics
 
-**Best for:** Small projects, low-volume transactional email, developers who need more than the free tier.
+**Best for:** Solo developers and small sites that want transactional email and a mailbox on their own domain.
 
-## Micro ($9/month) [#micro-9month]
+## Micro ($12/month) [#micro-12month]
 
-The Micro tier adds more volume at a low cost. It acts as the gateway tier -- better than free, with a clear upgrade path.
+Adds campaigns and automation. Includes a 14-day free trial.
 
-* **1,000 emails per day**
-* Sends from a NorthRelay system subdomain (no custom domains)
-* Inbox access with 1 GB storage
-* 25 templates and 5 contact lists
-* No custom domains, webhooks, or team features
+* **20,000 emails per month**
+* 2 custom domains
+* Campaigns, templates, scheduling and A/B tests
+* Inbox with 2 GB storage, 10 aliases, 1 extra inbox user
+* 3 webhooks
+* 90-day analytics
 
-**Best for:** Growing projects, campaigns, developers who need more volume.
+**Best for:** Small businesses and newsletters that send both transactional and marketing mail.
 
-## Pro ($19/month) [#pro-19month]
+## Pro ($29/month) [#pro-29month]
 
-The Pro tier is the first tier with full feature access. It unlocks custom domains, the core NorthRelay differentiator.
+The plan for products and teams.
 
-* **10,000 emails per day**
-* **Custom domains** -- send from your own domain with full SPF/DKIM/DMARC alignment
-* **Webhooks** -- receive real-time delivery notifications
-* Inbox access with 2 GB storage
-* Unlimited templates and contact lists
-* Full diagnostic tools access
+* **50,000 emails per month**
+* 5 custom domains
+* **Catch-all** inbox on your domains
+* Inbox with 5 GB storage, 25 aliases, 5 inbox users
+* 3 team members
+* 10 webhooks
+* 1-year analytics and 90-day logs
+* Priority email support
 
 **Best for:** SaaS products, growing businesses, anyone who needs deliverability guarantees.
 
-## Scale ($65/month) [#scale-65month]
+## Scale ($79/month) [#scale-79month]
 
-The Scale tier adds higher volume and team collaboration.
+High volume for teams and agencies.
 
-* **50,000 emails per day**
-* **Custom domains** with full authentication
-* **Webhooks** for delivery tracking
-* **Team members** -- invite colleagues with role-based access
-* Inbox access with 5 GB storage
-* Unlimited templates and contact lists
-* Full diagnostic tools access
+* **150,000 emails per month**
+* 20 custom domains
+* Inbox with 20 GB storage, unlimited aliases, 25 inbox users
+* 10 team members
+* Unlimited webhooks
+* 1-year log and analytics retention
+* Priority support with a shared Slack channel
 
-**Best for:** High-volume senders, marketing teams, multi-person operations.
+**Best for:** Agencies, multi-brand senders and marketing teams.
 
 ## Enterprise (Custom Pricing) [#enterprise-custom-pricing]
 
-The Enterprise tier provides custom limits and white-glove support.
-
-* **Custom sending limits** above the Scale tier
-* **Custom domains** with full authentication
-* **Webhooks** and **team members**
-* Custom inbox storage
-* **Priority support** with guaranteed response times
-* **Custom SLA** tailored to your requirements
-* Custom onboarding and migration assistance
-
-**Best for:** Large organizations, high-volume marketing platforms, businesses with strict compliance requirements.
+Everything in Scale plus negotiated volume and pacing, SSO/SAML, a custom SLA and migration assistance. Dedicated sending infrastructure is available on request.
 
 [Contact sales](mailto:sales@northrelay.ca) for Enterprise pricing.
 
@@ -4562,18 +4566,19 @@ For details, see [Sending Infrastructure](/docs/features/two-pool-system).
 
 ## Feature Gates [#feature-gates]
 
-Some features are gated by tier to ensure quality of service:
+| Feature                                   | Minimum Tier | Why                                                                   |
+| ----------------------------------------- | ------------ | --------------------------------------------------------------------- |
+| Custom domains, inbox, webhooks           | Starter ($5) | Domain verification and mailbox provisioning have per-account cost    |
+| Campaigns, templates, scheduling          | Micro ($12)  | Bulk sending needs suppression, unsubscribe and pacing infrastructure |
+| Catch-all, team members, priority support | Pro ($29)    | Multi-user access control and support capacity                        |
 
-| Feature          | Minimum Tier | Why                                                        |
-| ---------------- | ------------ | ---------------------------------------------------------- |
-| Custom domains   | Pro ($19)    | Requires domain verification for proper DKIM/SPF alignment |
-| Webhooks         | Pro ($19)    | Event delivery infrastructure has per-account overhead     |
-| Team members     | Scale ($65)  | Multi-user access control and audit logging                |
-| Priority support | Enterprise   | Dedicated support staff assignment                         |
+## What happens when I reach my quota? [#what-happens-when-i-reach-my-quota]
+
+Sends beyond your monthly quota are rejected with `QUOTA_EXCEEDED` (API) or `451 4.7.1 Monthly quota exceeded` (SMTP) until the counter resets on the 1st, or until you upgrade. The dashboard warns you at 80 %.
 
 ## How to Upgrade [#how-to-upgrade]
 
-1. Go to **Dashboard > Billing**
+1. Go to **Dashboard > Settings > Billing**
 2. Click **Change Plan**
 3. Select your new tier
 4. Enter payment information (if not already on file)
@@ -4583,17 +4588,17 @@ Upgrades take effect immediately. You get instant access to the new tier's featu
 
 ## How to Downgrade [#how-to-downgrade]
 
-1. Go to **Dashboard > Billing**
+1. Go to **Dashboard > Settings > Billing**
 2. Click **Change Plan**
 3. Select a lower tier
 4. Confirm the downgrade
 
-Downgrades take effect at the end of your current billing cycle. You keep your current tier's features until then. Note that downgrading may disable features (e.g., custom domains, webhooks) that are not available on the lower tier.
+Downgrades take effect at the end of your current billing cycle. You keep your current tier's features until then. Note that downgrading may disable features (e.g., extra custom domains, webhooks, team members) that are not available on the lower tier.
 
 ## Related [#related]
 
 * [Sending Infrastructure](/docs/features/two-pool-system) for how your mail is delivered
-* [Domain Verification](/docs/features/domain-verification) for custom domain setup (Pro+)
+* [Domain Verification](/docs/features/domain-verification) for custom domain setup (Starter+)
 * [Billing FAQ](/docs/billing/faq) for common billing questions
 * [Invoices](/docs/billing/invoices) for payment and receipt management
 
@@ -4780,11 +4785,11 @@ Verifying your custom domain allows you to send email from your own addresses (e
 
 ## Prerequisites [#prerequisites]
 
-* **Pro tier or higher** ($19/mo) -- custom domains are not available on Free, Starter, or Micro plans
+* **Starter tier or higher** ($5/mo) -- custom domains are not available on the Free plan (1 domain on Starter, 2 on Micro, 5 on Pro, 20 on Scale)
 * Access to your domain's DNS management (e.g., Cloudflare, Route 53, GoDaddy)
 * A domain you own and control
 
-Free, Starter, and Micro tier users send from NorthRelay system subdomains on `north-pipe.ca`. To use your own domain, [upgrade to Pro or higher](/docs/billing/plans).
+Free tier users send from NorthRelay system subdomains on `north-pipe.ca`. To use your own domain, [upgrade to Starter or higher](/docs/billing/plans).
 
 ## Why Verify Your Domain? [#why-verify-your-domain]
 
@@ -5149,13 +5154,13 @@ A single IP only works if it stays clean. These protections are enforced in code
 
 Plans differ in limits and features, not in where your mail comes from:
 
-| Tier        | Price | Quota/Day | Inbox cap | Retention | Features                          |
-| ----------- | ----- | --------- | --------- | --------- | --------------------------------- |
-| **Free**    | $0    | 100       | 250 MB    | 30 d      | Basic sending                     |
-| **Starter** | $5    | 500       | 500 MB    | 60 d      | + Inbox access                    |
-| **Micro**   | $9    | 1,000     | 1 GB      | 90 d      | + Campaigns, templates, webhooks  |
-| **Pro**     | $19   | 10,000    | 2 GB      | 365 d     | + Custom domains, catch-all, team |
-| **Scale**   | $65   | 50,000    | 5 GB      | 365 d     | High volume                       |
+| Tier        | Price (CAD/mo) | Emails/Month | Custom domains | Inbox cap | Inbox retention | Features                                    |
+| ----------- | -------------- | ------------ | -------------- | --------- | --------------- | ------------------------------------------- |
+| **Free**    | $0             | 3,000        | --             | --        | --              | API sending from a system subdomain         |
+| **Starter** | $5             | 5,000        | 1              | 1 GB      | 90 d            | + Inbox (JMAP + IMAP), aliases, 1 webhook   |
+| **Micro**   | $12            | 20,000       | 2              | 2 GB      | 180 d           | + Campaigns, templates, scheduling          |
+| **Pro**     | $29            | 50,000       | 5              | 5 GB      | 365 d           | + Catch-all, team members, priority support |
+| **Scale**   | $79            | 150,000      | 20             | 20 GB     | 365 d           | High volume                                 |
 
 See [Plans & Pricing](/docs/billing/plans) for the full comparison.
 
@@ -5401,7 +5406,7 @@ Get up and running with NorthRelay in 5 minutes. This guide walks you through cr
 3. Check your inbox for a 6-digit verification code
 4. Enter the code on the verification page (code expires after 15 minutes)
 
-Your account starts on the **Free** tier with 100 emails per day at no cost.
+Your account starts on the **Free** tier with 3,000 emails per month at no cost.
 
 ## Step 2: Get Your SMTP Credentials [#step-2-get-your-smtp-credentials]
 
@@ -5482,13 +5487,13 @@ pip install northrelay
 
 ## Plans and Quotas [#plans-and-quotas]
 
-| Tier    | Price | Quota/Day | Custom Domains |
-| ------- | ----- | --------- | -------------- |
-| Free    | $0    | 100       | No             |
-| Starter | $5    | 500       | No             |
-| Micro   | $9    | 1,000     | No             |
-| Pro     | $19   | 10,000    | Yes            |
-| Scale   | $65   | 50,000    | Yes            |
+| Tier    | Price (CAD/mo) | Emails/Month | Custom Domains |
+| ------- | -------------- | ------------ | -------------- |
+| Free    | $0             | 3,000        | No             |
+| Starter | $5             | 5,000        | 1              |
+| Micro   | $12            | 20,000       | 2              |
+| Pro     | $29            | 50,000       | 5              |
+| Scale   | $79            | 150,000      | 20             |
 
 Upgrade anytime from **Dashboard → Billing**.
 
@@ -5666,15 +5671,15 @@ You have hit your plan's sending quota.
 
 1. Check current usage at **Dashboard → Billing** (the usage bar shows percentage consumed)
 2. Warnings appear at 80% and 100% of your quota
-3. Quota resets at the start of each billing period
+3. Quota resets on the 1st of each calendar month
 
-| Tier    | Quota/Day |
-| ------- | --------- |
-| Free    | 100       |
-| Starter | 500       |
-| Micro   | 1,000     |
-| Pro     | 10,000    |
-| Scale   | 50,000    |
+| Tier    | Emails/Month |
+| ------- | ------------ |
+| Free    | 3,000        |
+| Starter | 5,000        |
+| Micro   | 20,000       |
+| Pro     | 50,000       |
+| Scale   | 150,000      |
 
 To increase your quota, upgrade your plan at **Dashboard → Billing**.
 
