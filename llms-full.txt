@@ -5113,6 +5113,102 @@ Incidents automatically resolve when the triggering metric returns below its war
 * [Plans & Pricing](/docs/billing/plans) for tier-specific reputation features
 
 
+# NorthRelay Studio
+
+
+
+# NorthRelay Studio [#northrelay-studio]
+
+NorthRelay Studio is the part of the platform that turns email templates into **versioned, brandable releases your product sends by key**. It is included from the **Micro plan** ($12/mo) and shares its template capacity (25 on Micro, 100 on Pro, 500 on Scale).
+
+Studio is the engine behind NorthRelay's own operational digests, and the same engine is available to every account through the dashboard and the `/api/v1/designs` API.
+
+## What you get [#what-you-get]
+
+| Capability                    | What it means for you                                                                                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Brands**                    | Colours, logo, fonts, sender defaults, footer and social links, exposed to every template as `{{theme.*}}` variables. One change rebrands every design.                      |
+| **Designs**                   | A template and brand pair owned by one of your applications, addressed by a stable `applicationKey` / `key` / `locale` tuple instead of an opaque id.                        |
+| **Releases**                  | Publishing creates an immutable snapshot of template and brand. Sends reference a release, so a later edit never changes mail already in flight.                             |
+| **Revision checks**           | Every update carries `expectedRevision`. Two people editing the same draft get a `409 REVISION_CONFLICT` instead of silently overwriting each other.                         |
+| **Rollback**                  | Any earlier release can be copied forward as a new release in one call.                                                                                                      |
+| **Previews with sample data** | Render the draft, the published release or any version with real variables, or ask Studio to synthesise samples from the variable schema.                                    |
+| **Idempotent sends**          | Sends require an `Idempotency-Key`. Retries return the original receipt, a conflicting payload is refused, and an uncertain submission is reported rather than resent.       |
+| **Deliveries**                | Every send keeps the release it was rendered from, plus the recorded delivery, bounce and open events.                                                                       |
+| **Application credentials**   | `nr_app_` keys scoped to specific applications and verified sender addresses. A credential can never send as a domain it was not issued for, and can never mint another key. |
+| **Manifests**                 | Export every design and brand as a manifest, review the plan, and apply it atomically from CI.                                                                               |
+
+## Two ways to work [#two-ways-to-work]
+
+**In the dashboard.** Open *Sending → Brands & themes* to create a brand with the wizard, then *Sending → Templates* to design with Handlebars variables, preview with sample data and publish. The template gallery gives you starters for authentication, notifications, billing and marketing.
+
+**From code.** Create an application credential under *Settings → API Keys*, then drive the same objects through the API:
+
+```bash
+# Create a draft design for the "command-center" application
+curl -X POST https://app.northrelay.ca/api/v1/designs \
+  -H "Authorization: Bearer $NORTHRELAY_APP_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "applicationKey": "command-center",
+    "key": "daily-digest",
+    "locale": "en",
+    "draft": {
+      "name": "Daily digest",
+      "subject": "{{title}} — {{date}}",
+      "html": "<h1>{{title}}</h1>{{#each stories}}<p><a href=\"{{url}}\">{{headline}}</a></p>{{/each}}",
+      "category": "NOTIFICATION",
+      "variables": {
+        "title": { "type": "string", "required": true, "example": "Digest" },
+        "stories": { "type": "array", "items": { "headline": { "type": "string" }, "url": { "type": "string", "format": "url" } } }
+      }
+    }
+  }'
+```
+
+```bash
+# Publish revision 3, then send the published release with an idempotency key
+curl -X POST https://app.northrelay.ca/api/v1/designs/$DESIGN_ID/publish \
+  -H "Authorization: Bearer $NORTHRELAY_APP_KEY" -H "Content-Type: application/json" \
+  -d '{ "expectedRevision": 3 }'
+
+curl -X POST https://app.northrelay.ca/api/v1/designs/$DESIGN_ID/send \
+  -H "Authorization: Bearer $NORTHRELAY_APP_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: run-2026-10-06-0815" \
+  -d '{ "to": [{ "email": "ops@example.com" }], "variables": { "title": "Digest", "stories": [] } }'
+```
+
+## API surface [#api-surface]
+
+| Method     | Path                              | Purpose                                                         |
+| ---------- | --------------------------------- | --------------------------------------------------------------- |
+| GET        | `/api/v1/capabilities`            | Permissions, sender and application restrictions, plan capacity |
+| GET, POST  | `/api/v1/designs`                 | List accessible designs / create a draft                        |
+| GET, PATCH | `/api/v1/designs/{id}`            | Read / replace the draft with `expectedRevision`                |
+| POST       | `/api/v1/designs/{id}/preview`    | Render the draft, the published release or a version            |
+| POST       | `/api/v1/designs/{id}/publish`    | Publish `expectedRevision`                                      |
+| POST       | `/api/v1/designs/{id}/rollback`   | Copy an earlier version into a new release                      |
+| GET        | `/api/v1/designs/{id}/releases`   | Immutable release history                                       |
+| POST       | `/api/v1/designs/{id}/send`       | Send the published release or a version                         |
+| GET        | `/api/v1/designs/{id}/deliveries` | Submission receipts and recorded events                         |
+| GET, POST  | `/api/v1/designs/manifest`        | Export, plan or atomically apply drafts                         |
+| POST       | `/api/v1/designs/assets`          | Upload an immutable public logo                                 |
+| GET, POST  | `/api/v1/designs/brands`          | Brands scoped to the credential's applications                  |
+
+Every response is `{ success: true, data }` or `{ success: false, error: { code, message } }`. Rendering uses `handlebars-safe-v1`: strings are escaped, URLs must be HTTPS, `if`, `unless` and one-level `each` are supported, and script, iframe and form content is removed.
+
+## Plans [#plans]
+
+|                         | Free | Starter | Micro | Pro | Scale |
+| ----------------------- | ---- | ------- | ----- | --- | ----- |
+| Studio access           | –    | –       | Yes   | Yes | Yes   |
+| Templates / designs     | –    | –       | 25    | 100 | 500   |
+| Brands                  | –    | –       | 3     | 10  | 25    |
+| Application credentials | –    | –       | Yes   | Yes | Yes   |
+
+See [Plans & Pricing](/docs/billing/plans) for the full ladder.
+
+
 # Sending Infrastructure
 
 
