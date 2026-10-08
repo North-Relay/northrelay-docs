@@ -3568,7 +3568,7 @@ Errors include the fix:
     "code": "RECIPIENT_UNSUBSCRIBED",
     "message": "jane@example.com has unsubscribed.",
     "fix_action": "The recipient unsubscribed. Pass \"resubscribe\": true only when they have given fresh consent (for example by submitting a form again), ideally with \"doubleOptIn\": true.",
-    "docs_url": "https://docs.northrelay.ca/api-reference/subscriptions"
+    "docs_url": "https://docs.northrelay.ca/docs/api-reference/subscriptions"
   }
 }
 ```
