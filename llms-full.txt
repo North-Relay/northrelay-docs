@@ -6326,34 +6326,38 @@ Every response is `{ success: true, data }` or `{ success: false, error: { code,
 
 ## API surface [#api-surface]
 
-| Method             | Path                                          | Purpose                                                                           |
-| ------------------ | --------------------------------------------- | --------------------------------------------------------------------------------- |
-| GET                | `/api/v1/capabilities`                        | Permissions, application and sender restrictions, plan capacity                   |
-| GET, POST          | `/api/v1/designs`                             | List templates (filters, cursor) / create a draft                                 |
-| GET, PATCH, DELETE | `/api/v1/designs/{id}`                        | Read / replace the draft (`expectedRevision`) / delete a template that never sent |
-| POST               | `/api/v1/designs/{id}/preview`                | Render the draft, the live release or a version; `brandId` previews another brand |
-| POST               | `/api/v1/designs/{id}/publish`                | Publish `expectedRevision`                                                        |
-| POST               | `/api/v1/designs/{id}/rollback`               | Copy an earlier version into a new release                                        |
-| GET                | `/api/v1/designs/{id}/releases`               | Release history; `?version=` for a full snapshot                                  |
-| POST               | `/api/v1/designs/{id}/send`                   | Send the live release (`Idempotency-Key` required)                                |
-| GET                | `/api/v1/designs/{id}/deliveries`             | Sends through this template and their events                                      |
-| GET                | `/api/v1/designs/{id}/usage`                  | Campaigns using the template, send counts                                         |
-| PATCH              | `/api/v1/designs/{id}/lifecycle`              | Retire or restore, with an optional replacement                                   |
-| POST               | `/api/v1/designs/{id}/brand`                  | Bind a brand                                                                      |
-| POST               | `/api/v1/designs/{id}/sync`                   | Compare with or apply updates from the gallery source                             |
-| GET, POST          | `/api/v1/designs/catalog`                     | Browse the gallery and shared templates / inspect one                             |
-| POST               | `/api/v1/designs/catalog/adopt`               | Adopt a starter (`asBlocks` for the visual editor)                                |
-| GET, POST          | `/api/v1/designs/brands`                      | List / create brands                                                              |
-| GET, PATCH, DELETE | `/api/v1/designs/brands/{id}`                 | Read / update (`expectedUpdatedAt`) / delete an unused brand                      |
-| GET                | `/api/v1/designs/brands/{id}/usage`           | Templates and campaigns using the brand                                           |
-| POST               | `/api/v1/designs/brands/{id}/default`         | Make an account brand the default                                                 |
-| GET, PUT, DELETE   | `/api/v1/designs/brands/{id}/tracking-domain` | Custom tracking domain (`POST …/verify` checks the CNAME)                         |
-| GET, POST, DELETE  | `/api/v1/designs/assets`                      | List / upload / delete images                                                     |
-| GET, POST          | `/api/v1/designs/manifest`                    | Export, plan or atomically apply drafts from CI                                   |
+| Method             | Path                                          | Purpose                                                                                                                                           |
+| ------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET                | `/api/v1/capabilities`                        | Permissions, application and sender restrictions, plan capacity                                                                                   |
+| GET, POST          | `/api/v1/designs`                             | List templates (filters, cursor) / create a draft                                                                                                 |
+| GET, PATCH, DELETE | `/api/v1/designs/{id}`                        | Read / replace the draft (`expectedRevision`) / delete a template that never sent                                                                 |
+| POST               | `/api/v1/designs/{id}/preview`                | Render the draft, the live release or a version; `brandId` previews another brand                                                                 |
+| POST               | `/api/v1/designs/{id}/publish`                | Publish `expectedRevision`                                                                                                                        |
+| POST               | `/api/v1/designs/{id}/rollback`               | Copy an earlier version into a new release                                                                                                        |
+| GET                | `/api/v1/designs/{id}/releases`               | Release history; `?version=` for a full snapshot                                                                                                  |
+| POST               | `/api/v1/designs/{id}/send`                   | Send the live release (`Idempotency-Key` required)                                                                                                |
+| GET                | `/api/v1/designs/{id}/deliveries`             | Sends through this template and their events                                                                                                      |
+| GET                | `/api/v1/designs/{id}/usage`                  | Campaigns using the template, send counts                                                                                                         |
+| PATCH              | `/api/v1/designs/{id}/lifecycle`              | Retire or restore, with an optional replacement                                                                                                   |
+| POST               | `/api/v1/designs/{id}/brand`                  | Bind a brand                                                                                                                                      |
+| POST               | `/api/v1/designs/{id}/sync`                   | Compare with or apply updates from the gallery source                                                                                             |
+| GET, POST          | `/api/v1/designs/catalog`                     | Browse the gallery and shared templates / inspect one                                                                                             |
+| POST               | `/api/v1/designs/catalog/adopt`               | Adopt a starter (`asBlocks` for the visual editor)                                                                                                |
+| GET, POST          | `/api/v1/designs/brands`                      | List / create brands                                                                                                                              |
+| GET, PATCH, DELETE | `/api/v1/designs/brands/{id}`                 | Read / update (`expectedUpdatedAt`) / delete an unused brand                                                                                      |
+| GET                | `/api/v1/designs/brands/{id}/usage`           | Templates and campaigns using the brand                                                                                                           |
+| POST               | `/api/v1/designs/brands/{id}/default`         | Make an account brand the default                                                                                                                 |
+| GET, PUT, DELETE   | `/api/v1/designs/brands/{id}/tracking-domain` | Custom tracking domain (`POST …/verify` checks the CNAME)                                                                                         |
+| GET, POST, DELETE  | `/api/v1/designs/assets`                      | List / upload / delete images                                                                                                                     |
+| GET, POST          | `/api/v1/designs/manifest`                    | Export (with a `version` that changes when any draft changes), plan or atomically apply drafts; `publish: true` then publishes each changed entry |
 
 New releases render with `handlebars-email-v2`: values are escaped, template sources are checked on save and publish (no script, iframe, form, event handlers or `javascript:` links), and MJML styles and Outlook conditional comments are kept.
 
 The [TypeScript](/docs/sdks/typescript) and [Python](/docs/sdks/python) SDKs expose these as `client.designs`, and the [MCP server](/docs/sdks/mcp-server) as the `*_email_design*`, `*_email_brand*` and `*_email_asset*` tools.
+
+## Installing templates into another account [#installing-templates-into-another-account]
+
+A product that sends through its users' own NorthRelay accounts can ship its templates as a manifest: export the application's manifest from the product's account, then apply it with the user's credential into their account (`dryRun: true` to show the plan, then `dryRun: false, publish: true` to install and publish in one call). The export's `version` tells you when an installed copy is behind.
 
 ## Embedding Studio in your product [#embedding-studio-in-your-product]
 
@@ -10564,7 +10568,7 @@ Tier does not affect routing. See [Sending Infrastructure](/docs/features/two-po
 
 # MCP Server [#mcp-server]
 
-The NorthRelay MCP Server (`@northrelay/mcp-server` 1.8.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
+The NorthRelay MCP Server (`@northrelay/mcp-server` 1.9.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
 
 ## What is MCP? [#what-is-mcp]
 
