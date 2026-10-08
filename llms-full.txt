@@ -3480,13 +3480,13 @@ POST /emails/validate/bulk
 
 ### Content [#content]
 
-| Field         | Type                         | Required    | Description                                                            |
-| ------------- | ---------------------------- | ----------- | ---------------------------------------------------------------------- |
-| `subject`     | string                       | Conditional | Required unless `templateId` is provided (1--998 chars)                |
-| `html`        | string                       | Conditional | HTML body; at least one of `html`, `text`, or `templateId` is required |
-| `text`        | string                       | Conditional | Plain-text body                                                        |
-| `templateId`  | string                       | Conditional | ID of a saved [template](/api-reference/templates)                     |
-| `attachments` | [Attachment](#attachment)\[] | No          | File attachments                                                       |
+| Field         | Type                         | Required    | Description                                                                      |
+| ------------- | ---------------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `subject`     | string                       | Conditional | Required unless `templateId` is provided (1--998 chars)                          |
+| `html`        | string                       | Conditional | HTML body; at least one of `html`, `text`, or `templateId` is required           |
+| `text`        | string                       | Conditional | Plain-text body                                                                  |
+| `templateId`  | string                       | Conditional | ID of a [Studio template](/docs/features/studio); the send uses its live release |
+| `attachments` | [Attachment](#attachment)\[] | No          | File attachments                                                                 |
 
 ### Attachment [#attachment]
 
@@ -4413,6 +4413,8 @@ DELETE /suppression-groups/{id}/members/{email}
 
 
 # Templates API [#templates-api]
+
+> **Deprecated — sunset 30 April 2027.** Templates are now [NorthRelay Studio](/docs/features/studio) designs. Manage them with `/api/v1/designs` (SDK `client.designs`, MCP `*_email_design*` tools). Every template id below is also a design id, and sending with `templateId` through [`POST /api/v1/emails/send`](/docs/api-reference/sending) is **not** deprecated. Until the sunset these endpoints keep working as adapters: reads return the template's live release, and writes publish immediately. Responses carry `Deprecation: true`, `Sunset` and `Link: </api/v1/designs>; rel="successor-version"` headers.
 
 Templates let you define reusable email layouts with dynamic variables. Use Handlebars-style `{{variable}}` syntax for personalization. Templates can be referenced by ID when sending emails, keeping your sending code clean and your email content centrally managed.
 
@@ -6227,36 +6229,62 @@ Incidents automatically resolve when the triggering metric returns below its war
 
 # NorthRelay Studio [#northrelay-studio]
 
-NorthRelay Studio is the part of the platform that turns email templates into **versioned, brandable releases your product sends by key**. It is included from the **Micro plan** ($12/mo) and shares its template capacity (25 on Micro, 100 on Pro, 500 on Scale).
+NorthRelay Studio is where your email **templates** and **brands** live. Every template, whether you build it in the dashboard, adopt it from the gallery or create it from code, is a versioned design: you edit a draft, review it, and publish an immutable release that sends use. Studio is included from the **Micro plan** ($12/mo).
 
-Studio is the engine behind NorthRelay's own operational digests, and the same engine is available to every account through the dashboard and the `/api/v1/designs` API.
+Open it from the sidebar: **Studio** → Overview, Templates, Brands, Assets, Applications and Activity.
 
 ## What you get [#what-you-get]
 
-| Capability                    | What it means for you                                                                                                                                                        |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Brands**                    | Colours, logo, fonts, sender defaults, footer and social links, exposed to every template as `{{theme.*}}` variables. One change rebrands every design.                      |
-| **Designs**                   | A template and brand pair owned by one of your applications, addressed by a stable `applicationKey` / `key` / `locale` tuple instead of an opaque id.                        |
-| **Releases**                  | Publishing creates an immutable snapshot of template and brand. Sends reference a release, so a later edit never changes mail already in flight.                             |
-| **Revision checks**           | Every update carries `expectedRevision`. Two people editing the same draft get a `409 REVISION_CONFLICT` instead of silently overwriting each other.                         |
-| **Rollback**                  | Any earlier release can be copied forward as a new release in one call.                                                                                                      |
-| **Previews with sample data** | Render the draft, the published release or any version with real variables, or ask Studio to synthesise samples from the variable schema.                                    |
-| **Idempotent sends**          | Sends require an `Idempotency-Key`. Retries return the original receipt, a conflicting payload is refused, and an uncertain submission is reported rather than resent.       |
-| **Deliveries**                | Every send keeps the release it was rendered from, plus the recorded delivery, bounce and open events.                                                                       |
-| **Application credentials**   | `nr_app_` keys scoped to specific applications and verified sender addresses. A credential can never send as a domain it was not issued for, and can never mint another key. |
-| **Manifests**                 | Export every design and brand as a manifest, review the plan, and apply it atomically from CI.                                                                               |
+| Capability           | What it means for you                                                                                                                                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Templates**        | Build visually with blocks or write HTML with Handlebars variables. Start blank or from the gallery (authentication, notifications, billing, marketing).                                                              |
+| **Brands**           | Colours, logo, fonts, sender, compliance contact, footer, social links, custom variables and the unsubscribe page. Every template reads them as `{{theme.*}}`. Contrast checks warn when text would be hard to read.  |
+| **Preview**          | Rendered by the same engine that sends: desktop, mobile, simulated dark mode and plain text, with sample data from the variable schema or your own values. Preview any template with another brand before you switch. |
+| **Review & publish** | A field-by-field diff against the live release before you publish. Drafts autosave and never affect live mail.                                                                                                        |
+| **Releases**         | Each publish is an immutable snapshot. Restore any earlier release in one click.                                                                                                                                      |
+| **Usage**            | See which campaigns use a template and how many messages it sent, and which templates and campaigns use a brand.                                                                                                      |
+| **Deliveries**       | Every send through a template, from the API or Studio, with its delivery events.                                                                                                                                      |
+| **Test sends**       | Send yourself a test from a verified sender, safely retried with an idempotency key.                                                                                                                                  |
+| **Assets**           | Upload a logo (PNG, JPEG or WebP up to 700 KiB). NorthRelay resizes it for email and serves it from an immutable HTTPS URL.                                                                                           |
+| **Applications**     | Products that send through NorthRelay (for example Alteriom Command Center) keep their own templates and brands under an application key, reached with a scoped `nr_app_` credential.                                 |
 
-## Two ways to work [#two-ways-to-work]
+## Account templates and application templates [#account-templates-and-application-templates]
 
-**In the dashboard.** Open *Sending → Brands & themes* to create a brand with the wizard, then *Sending → Templates* to design with Handlebars variables, preview with sample data and publish. The template gallery gives you starters for authentication, notifications, billing and marketing.
+Your own templates, the ones you create in the dashboard, belong to the reserved application **`account`**. Products can own templates under their own application key. The two differ in how they treat brands and variables:
 
-**From code.** Create an application credential under *Settings → API Keys*, then drive the same objects through the API:
+|           | Account templates (`account`)                                                                             | Application templates (e.g. `command-center`)                                                                                                      |
+| --------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brand     | Uses the bound brand **live**: edit the brand and the next send uses it.                                  | The brand is **frozen in each release**. After a brand change, the brand editor lists the templates to publish again and can publish them for you. |
+| Variables | Lenient: a missing variable renders empty, extra variables are ignored.                                   | Strict: required variables must be present, unknown variables are refused.                                                                         |
+| Sender    | Optional on the template; the brand sender is the default, and a send can choose another verified sender. | Must be one of the credential's allowed senders.                                                                                                   |
+
+## Sending with a template [#sending-with-a-template]
+
+Use the template id with the email API. Nothing changes if you already send this way:
 
 ```bash
-# Create a draft design for the "command-center" application
+curl -X POST https://app.northrelay.ca/api/v1/emails/send \
+  -H "Authorization: Bearer $NORTHRELAY_API_KEY" -H "Content-Type: application/json" \
+  -d '{
+    "from": { "email": "hello@acme.example", "name": "Acme" },
+    "to": [{ "email": "ana@example.com" }],
+    "content": { "templateId": "tmpl_123" },
+    "variables": { "first_name": "Ana" }
+  }'
+```
+
+The send uses the template's **live release**. A retired template is refused with `TEMPLATE_RETIRED`, a template that was never published with `TEMPLATE_NOT_PUBLISHED`, and missing required variables with `MISSING_TEMPLATE_VARIABLES`; each error names the fix.
+
+Campaigns pick a template in the campaign wizard and render it with the contact's details, the brand and the unsubscribe links.
+
+## From code [#from-code]
+
+Everything in Studio is available through `/api/v1/designs`, the SDKs and the MCP server.
+
+```bash
+# Create a draft for your application
 curl -X POST https://app.northrelay.ca/api/v1/designs \
-  -H "Authorization: Bearer $NORTHRELAY_APP_KEY" \
-  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NORTHRELAY_APP_KEY" -H "Content-Type: application/json" \
   -d '{
     "applicationKey": "command-center",
     "key": "daily-digest",
@@ -6272,45 +6300,75 @@ curl -X POST https://app.northrelay.ca/api/v1/designs \
       }
     }
   }'
-```
 
-```bash
-# Publish revision 3, then send the published release with an idempotency key
+# Publish revision 1, then send the live release with an idempotency key
 curl -X POST https://app.northrelay.ca/api/v1/designs/$DESIGN_ID/publish \
   -H "Authorization: Bearer $NORTHRELAY_APP_KEY" -H "Content-Type: application/json" \
-  -d '{ "expectedRevision": 3 }'
+  -d '{ "expectedRevision": 1 }'
 
 curl -X POST https://app.northrelay.ca/api/v1/designs/$DESIGN_ID/send \
   -H "Authorization: Bearer $NORTHRELAY_APP_KEY" -H "Content-Type: application/json" \
-  -H "Idempotency-Key: run-2026-10-06-0815" \
-  -d '{ "to": [{ "email": "ops@example.com" }], "variables": { "title": "Digest", "stories": [] } }'
+  -H "Idempotency-Key: digest-2026-10-08" \
+  -d '{ "to": [{ "email": "ops@example.com" }], "variables": { "title": "Digest", "date": "8 Oct", "stories": [] } }'
 ```
+
+```ts
+import { NorthRelayClient } from '@northrelay/sdk';
+const nr = new NorthRelayClient({ apiKey: process.env.NORTHRELAY_API_KEY! });
+
+const { data: usage } = await nr.designs.usage(designId);           // campaigns and send counts
+await nr.designs.preview(designId, { sample: true, brandId });       // try another brand
+const { data: brand } = await nr.designs.brandUsage(brandId);        // what a brand change affects
+await nr.designs.uploadAsset({ imageBase64 });                       // logo for a brand
+```
+
+Every response is `{ success: true, data }` or `{ success: false, error: { code, message } }`. Writes carry `expectedRevision` (designs) or `expectedUpdatedAt` (brands), so two editors get a `409 REVISION_CONFLICT` instead of overwriting each other.
 
 ## API surface [#api-surface]
 
-| Method     | Path                              | Purpose                                                         |
-| ---------- | --------------------------------- | --------------------------------------------------------------- |
-| GET        | `/api/v1/capabilities`            | Permissions, sender and application restrictions, plan capacity |
-| GET, POST  | `/api/v1/designs`                 | List accessible designs / create a draft                        |
-| GET, PATCH | `/api/v1/designs/{id}`            | Read / replace the draft with `expectedRevision`                |
-| POST       | `/api/v1/designs/{id}/preview`    | Render the draft, the published release or a version            |
-| POST       | `/api/v1/designs/{id}/publish`    | Publish `expectedRevision`                                      |
-| POST       | `/api/v1/designs/{id}/rollback`   | Copy an earlier version into a new release                      |
-| GET        | `/api/v1/designs/{id}/releases`   | Immutable release history                                       |
-| POST       | `/api/v1/designs/{id}/send`       | Send the published release or a version                         |
-| GET        | `/api/v1/designs/{id}/deliveries` | Submission receipts and recorded events                         |
-| GET, POST  | `/api/v1/designs/manifest`        | Export, plan or atomically apply drafts                         |
-| POST       | `/api/v1/designs/assets`          | Upload an immutable public logo                                 |
-| GET, POST  | `/api/v1/designs/brands`          | Brands scoped to the credential's applications                  |
+| Method             | Path                                          | Purpose                                                                           |
+| ------------------ | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| GET                | `/api/v1/capabilities`                        | Permissions, application and sender restrictions, plan capacity                   |
+| GET, POST          | `/api/v1/designs`                             | List templates (filters, cursor) / create a draft                                 |
+| GET, PATCH, DELETE | `/api/v1/designs/{id}`                        | Read / replace the draft (`expectedRevision`) / delete a template that never sent |
+| POST               | `/api/v1/designs/{id}/preview`                | Render the draft, the live release or a version; `brandId` previews another brand |
+| POST               | `/api/v1/designs/{id}/publish`                | Publish `expectedRevision`                                                        |
+| POST               | `/api/v1/designs/{id}/rollback`               | Copy an earlier version into a new release                                        |
+| GET                | `/api/v1/designs/{id}/releases`               | Release history; `?version=` for a full snapshot                                  |
+| POST               | `/api/v1/designs/{id}/send`                   | Send the live release (`Idempotency-Key` required)                                |
+| GET                | `/api/v1/designs/{id}/deliveries`             | Sends through this template and their events                                      |
+| GET                | `/api/v1/designs/{id}/usage`                  | Campaigns using the template, send counts                                         |
+| PATCH              | `/api/v1/designs/{id}/lifecycle`              | Retire or restore, with an optional replacement                                   |
+| POST               | `/api/v1/designs/{id}/brand`                  | Bind a brand                                                                      |
+| POST               | `/api/v1/designs/{id}/sync`                   | Compare with or apply updates from the gallery source                             |
+| GET, POST          | `/api/v1/designs/catalog`                     | Browse the gallery and shared templates / inspect one                             |
+| POST               | `/api/v1/designs/catalog/adopt`               | Adopt a starter (`asBlocks` for the visual editor)                                |
+| GET, POST          | `/api/v1/designs/brands`                      | List / create brands                                                              |
+| GET, PATCH, DELETE | `/api/v1/designs/brands/{id}`                 | Read / update (`expectedUpdatedAt`) / delete an unused brand                      |
+| GET                | `/api/v1/designs/brands/{id}/usage`           | Templates and campaigns using the brand                                           |
+| POST               | `/api/v1/designs/brands/{id}/default`         | Make an account brand the default                                                 |
+| GET, PUT, DELETE   | `/api/v1/designs/brands/{id}/tracking-domain` | Custom tracking domain (`POST …/verify` checks the CNAME)                         |
+| GET, POST, DELETE  | `/api/v1/designs/assets`                      | List / upload / delete images                                                     |
+| GET, POST          | `/api/v1/designs/manifest`                    | Export, plan or atomically apply drafts from CI                                   |
 
-Every response is `{ success: true, data }` or `{ success: false, error: { code, message } }`. Rendering uses `handlebars-safe-v1`: strings are escaped, URLs must be HTTPS, `if`, `unless` and one-level `each` are supported, and script, iframe and form content is removed.
+New releases render with `handlebars-email-v2`: values are escaped, template sources are checked on save and publish (no script, iframe, form, event handlers or `javascript:` links), and MJML styles and Outlook conditional comments are kept.
+
+The [TypeScript](/docs/sdks/typescript) and [Python](/docs/sdks/python) SDKs expose these as `client.designs`, and the [MCP server](/docs/sdks/mcp-server) as the `*_email_design*`, `*_email_brand*` and `*_email_asset*` tools.
+
+## Embedding Studio in your product [#embedding-studio-in-your-product]
+
+`@northrelay/studio-react` renders the same Studio screens (template library, workspace, brands) inside another React app. Your server proxies the Studio API with an application credential, so no NorthRelay key reaches the browser. Alteriom Command Center uses it.
+
+## Legacy APIs [#legacy-apis]
+
+`/api/v1/templates` and `/api/v1/brand-theme` keep working until **30 April 2027** and return `Deprecation`, `Sunset` and `Link: rel="successor-version"` headers. Every existing template is now a Studio template with the same id, so `templateId` values in your code stay valid. Move template and brand management to `/api/v1/designs`.
 
 ## Plans [#plans]
 
 |                         | Free | Starter | Micro | Pro | Scale |
 | ----------------------- | ---- | ------- | ----- | --- | ----- |
 | Studio access           | –    | –       | Yes   | Yes | Yes   |
-| Templates / designs     | –    | –       | 25    | 100 | 500   |
+| Templates               | –    | –       | 25    | 100 | 500   |
 | Brands                  | –    | –       | 3     | 10  | 25    |
 | Application credentials | –    | –       | Yes   | Yes | Yes   |
 
@@ -10506,7 +10564,7 @@ Tier does not affect routing. See [Sending Infrastructure](/docs/features/two-po
 
 # MCP Server [#mcp-server]
 
-The NorthRelay MCP Server (`@northrelay/mcp-server` 1.7.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
+The NorthRelay MCP Server (`@northrelay/mcp-server` 1.8.0) exposes the full NorthRelay API as tools that AI agents can use directly. It implements the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) standard, allowing AI assistants to send emails, manage templates, check delivery status, and more through natural language.
 
 ## What is MCP? [#what-is-mcp]
 
@@ -10755,29 +10813,29 @@ switches the authorization server off.
 
 The MCP server (1.7.0) exposes 149 tools in 21 groups.
 
-| Group                   | Tools                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Description                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| **emails**              | `send_email`, `get_email_events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Send email and read its delivery events                                         |
-| **templates**           | `list_templates`, `get_template`, `create_template`, `update_template`, `delete_template`, `render_template`, `get_template_blocks`, `add_template_block`, `update_template_block`, `delete_template_block`, `reorder_template_blocks`, `list_template_versions`, `restore_template_version`, `test_send_template`, `import_templates`, `export_templates`                                                                                                                                                                                                                                                                    | Reusable email templates                                                        |
-| **designs**             | `list_email_template_catalog`, `inspect_email_template`, `adopt_email_template`, `sync_email_template_source`, `list_email_brands`, `create_email_brand`, `update_email_brand`, `bind_email_brand`, `upload_email_brand_logo`, `get_email_capabilities`, `list_email_designs`, `get_email_design`, `create_email_design`, `update_email_design`, `set_email_design_lifecycle`, `delete_email_design`, `preview_email_design`, `publish_email_design`, `rollback_email_design`, `send_email_design`, `get_email_design_releases`, `get_email_design_deliveries`, `export_email_design_manifest`, `apply_email_design_manifest` | Hosted email designs ([NorthRelay Studio](/docs/features/studio))               |
-| **campaigns**           | `list_campaigns`, `get_campaign`, `create_campaign`, `update_campaign`, `submit_campaign`, `send_campaign`, `delete_campaign`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Bulk campaigns                                                                  |
-| **brand\_theme**        | `list_brand_themes`, `get_brand_theme`, `create_brand_theme`, `update_brand_theme`, `delete_brand_theme`, `set_brand_tracking_domain`, `verify_brand_tracking_domain`, `remove_brand_tracking_domain`                                                                                                                                                                                                                                                                                                                                                                                                                         | Branding and tracking domains                                                   |
-| **contacts**            | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact`, `bulk_create_contacts`, `bulk_delete_contacts`, `add_contact_tags`, `remove_contact_tag`, `list_contact_lists`, `get_contact_list`, `create_contact_list`, `update_contact_list`, `delete_contact_list`, `add_list_members`, `remove_list_members`, `list_list_members`                                                                                                                                                                                                                                                                 | Contacts, lists and list members (by contact id or email)                       |
-| **subscriptions**       | `subscribe_contact`, `unsubscribe_contact`, `get_subscription_status`, `update_subscription_preferences`, `resend_subscription_confirmation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Opt-in with consent and double opt-in, opt-out by scope, status and preferences |
-| **forms**               | `list_forms`, `get_form`, `create_form`, `update_form`, `set_form_fields`, `archive_form`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Hosted signup forms                                                             |
-| **domains**             | `check_deliverability`, `check_blocklist`, `check_dns`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Deliverability, blocklist and DNS checks                                        |
-| **webhooks**            | `list_webhooks`, `get_webhook`, `create_webhook`, `update_webhook`, `delete_webhook`, `rotate_webhook_secret`, `test_webhook`, `get_webhook_health`                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Event notification endpoints                                                    |
-| **api\_keys**           | `list_api_keys`, `create_api_key`, `revoke_api_key`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | API key management                                                              |
-| **credentials**         | `list_credentials`, `create_credential`, `update_credential`, `rotate_credential`, `revoke_credential`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Application credentials                                                         |
-| **events**              | `list_events`, `get_event`, `count_events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Email event log                                                                 |
-| **analytics**           | `query_analytics`, `get_engagement_heatmap`, `get_geographic_data`, `get_provider_stats`, `export_analytics`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Engagement and delivery analytics                                               |
-| **metrics**             | `get_metrics`, `get_metrics_summary`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Delivery metrics                                                                |
-| **suppressions**        | `list_suppressions`, `add_suppression`, `remove_suppression`, `bulk_add_suppressions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Account-level suppressions                                                      |
-| **suppression\_groups** | `list_suppression_groups`, `get_suppression_group`, `create_suppression_group`, `update_suppression_group`, `delete_suppression_group`, `list_suppression_group_members`, `add_suppression_group_member`, `remove_suppression_group_member`, `bulk_update_suppression_group_members`                                                                                                                                                                                                                                                                                                                                          | Topics and their opt-outs (a member is an address that opted out)               |
-| **subusers**            | `list_subusers`, `get_subuser`, `create_subuser`, `update_subuser`, `delete_subuser`, `suspend_subuser`, `reactivate_subuser`, `get_subuser_usage`                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Subuser accounts                                                                |
-| **identity**            | `list_identities`, `get_identity`, `create_identity`, `verify_identity`, `get_profile`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Sender identities and profile                                                   |
-| **ip\_pools**           | `list_ip_pools`, `get_ip_pool`, `create_ip_pool`, `update_ip_pool`, `list_pool_ips`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | IP pools                                                                        |
-| **ips**                 | `list_ips`, `get_ip`, `get_ip_warmup_status`, `update_ip_warmup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | IPs and warmup                                                                  |
+| Group                      | Tools                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Description                                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **emails**                 | `send_email`, `get_email_events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Send email and read its delivery events                                                                              |
+| **templates** (deprecated) | `list_templates`, `get_template`, `create_template`, `update_template`, `delete_template`, `render_template`, `get_template_blocks`, `add_template_block`, `update_template_block`, `delete_template_block`, `reorder_template_blocks`, `list_template_versions`, `restore_template_version`, `test_send_template`, `import_templates`, `export_templates`                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Legacy template API, sunset 30 April 2027: use the **designs** tools                                                 |
+| **designs**                | `list_email_template_catalog`, `inspect_email_template`, `adopt_email_template`, `sync_email_template_source`, `list_email_brands`, `create_email_brand`, `update_email_brand`, `bind_email_brand`, `get_email_brand_usage`, `delete_email_brand`, `set_default_email_brand`, `list_email_assets`, `upload_email_asset`, `delete_email_asset`, `upload_email_brand_logo` (deprecated), `get_email_capabilities`, `list_email_designs`, `get_email_design`, `create_email_design`, `update_email_design`, `set_email_design_lifecycle`, `delete_email_design`, `preview_email_design`, `publish_email_design`, `rollback_email_design`, `send_email_design`, `get_email_design_releases`, `get_email_design_deliveries`, `get_email_design_usage`, `export_email_design_manifest`, `apply_email_design_manifest` | Templates and brands ([NorthRelay Studio](/docs/features/studio)); dashboard templates use application key `account` |
+| **campaigns**              | `list_campaigns`, `get_campaign`, `create_campaign`, `update_campaign`, `submit_campaign`, `send_campaign`, `delete_campaign`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Bulk campaigns                                                                                                       |
+| **brand\_theme**           | `list_brand_themes`, `get_brand_theme`, `create_brand_theme`, `update_brand_theme`, `delete_brand_theme` (deprecated), `set_brand_tracking_domain`, `verify_brand_tracking_domain`, `remove_brand_tracking_domain`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Tracking domains (Studio brand API); the `*_brand_theme` tools are deprecated in favour of the email brand tools     |
+| **contacts**               | `list_contacts`, `get_contact`, `create_contact`, `update_contact`, `delete_contact`, `bulk_create_contacts`, `bulk_delete_contacts`, `add_contact_tags`, `remove_contact_tag`, `list_contact_lists`, `get_contact_list`, `create_contact_list`, `update_contact_list`, `delete_contact_list`, `add_list_members`, `remove_list_members`, `list_list_members`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Contacts, lists and list members (by contact id or email)                                                            |
+| **subscriptions**          | `subscribe_contact`, `unsubscribe_contact`, `get_subscription_status`, `update_subscription_preferences`, `resend_subscription_confirmation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Opt-in with consent and double opt-in, opt-out by scope, status and preferences                                      |
+| **forms**                  | `list_forms`, `get_form`, `create_form`, `update_form`, `set_form_fields`, `archive_form`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Hosted signup forms                                                                                                  |
+| **domains**                | `check_deliverability`, `check_blocklist`, `check_dns`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Deliverability, blocklist and DNS checks                                                                             |
+| **webhooks**               | `list_webhooks`, `get_webhook`, `create_webhook`, `update_webhook`, `delete_webhook`, `rotate_webhook_secret`, `test_webhook`, `get_webhook_health`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Event notification endpoints                                                                                         |
+| **api\_keys**              | `list_api_keys`, `create_api_key`, `revoke_api_key`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | API key management                                                                                                   |
+| **credentials**            | `list_credentials`, `create_credential`, `update_credential`, `rotate_credential`, `revoke_credential`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Application credentials                                                                                              |
+| **events**                 | `list_events`, `get_event`, `count_events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Email event log                                                                                                      |
+| **analytics**              | `query_analytics`, `get_engagement_heatmap`, `get_geographic_data`, `get_provider_stats`, `export_analytics`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Engagement and delivery analytics                                                                                    |
+| **metrics**                | `get_metrics`, `get_metrics_summary`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Delivery metrics                                                                                                     |
+| **suppressions**           | `list_suppressions`, `add_suppression`, `remove_suppression`, `bulk_add_suppressions`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Account-level suppressions                                                                                           |
+| **suppression\_groups**    | `list_suppression_groups`, `get_suppression_group`, `create_suppression_group`, `update_suppression_group`, `delete_suppression_group`, `list_suppression_group_members`, `add_suppression_group_member`, `remove_suppression_group_member`, `bulk_update_suppression_group_members`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Topics and their opt-outs (a member is an address that opted out)                                                    |
+| **subusers**               | `list_subusers`, `get_subuser`, `create_subuser`, `update_subuser`, `delete_subuser`, `suspend_subuser`, `reactivate_subuser`, `get_subuser_usage`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Subuser accounts                                                                                                     |
+| **identity**               | `list_identities`, `get_identity`, `create_identity`, `verify_identity`, `get_profile`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Sender identities and profile                                                                                        |
+| **ip\_pools**              | `list_ip_pools`, `get_ip_pool`, `create_ip_pool`, `update_ip_pool`, `list_pool_ips`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | IP pools                                                                                                             |
+| **ips**                    | `list_ips`, `get_ip`, `get_ip_warmup_status`, `update_ip_warmup`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | IPs and warmup                                                                                                       |
 
 The contact, subscription, topic and form tools return structured content and carry MCP annotations (read-only, destructive, idempotent). Their errors keep the API `code`, `status` and `fix_action`.
 
@@ -10793,11 +10851,13 @@ The AI agent will call `send_email` with the appropriate parameters.
 
 ### Managing Templates [#managing-templates]
 
-> "Create a new email template called 'Password Reset' with a subject line 'Reset your password' and a body that includes a reset link placeholder."
+> "Create an account template called 'Password Reset' with the subject 'Reset your password' and a reset link variable, preview it with sample data, and publish it."
 
-> "List all my email templates."
+> "List my templates and tell me which campaigns use 'Monthly newsletter'."
 
-> "Delete the template called 'Old Newsletter'."
+> "Preview the welcome template with the 'Acme dark' brand."
+
+> "Retire the template called 'Old Newsletter' and point to 'Newsletter 2026' as its replacement."
 
 ### Checking Delivery Status [#checking-delivery-status]
 
@@ -11159,21 +11219,43 @@ page = await client.suppressions.list()
 
 Emails are URL-encoded in paths for you. `reason` is one of `Bounce`, `Complaint`, `Unsubscribe` or `Manual`. To record a recipient's own opt-out, prefer `subscriptions.unsubscribe()`.
 
+## Templates and Brands (Studio) [#templates-and-brands-studio]
+
+Every template is a [Studio](/docs/features/studio) design. Dashboard templates use the application key `"account"`; a product with an `nr_app_` credential uses its own key.
+
+```python
+page = (await client.designs.list_page(application_key="account", search="welcome"))["data"]
+design = (await client.designs.get(page["items"][0]["id"]))["data"]
+await client.designs.preview(design["id"], sample=True, brand_id=other_brand_id)
+await client.designs.publish(design["id"], design["revision"])
+await client.designs.send(design["id"], to=[{"email": "ana@example.com"}],
+                          variables={"first_name": "Ana"}, idempotency_key="welcome-ana-1")
+usage = (await client.designs.usage(design["id"]))["data"]
+
+asset = (await client.designs.upload_asset(image_base64))["data"]   # PNG, JPEG or WebP
+brand = (await client.designs.create_brand(theme={"name": "Acme", "logoUrl": asset["url"]}))["data"]
+await client.designs.set_default_brand(brand["id"])
+affected = (await client.designs.brand_usage(brand["id"]))["data"]
+```
+
+`templates` and `brand_theme` are deprecated (sunset 30 April 2027). Template ids are design ids, so sending with `template_id` keeps working.
+
 ## Other Resources [#other-resources]
 
-| Attribute                                                     | Methods                                                                                                          |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `emails`                                                      | `send`, `send_template`, `schedule`, `send_batch`, `validate`                                                    |
-| `templates`                                                   | `list`, `get`, `create`, `update`, `delete`, `preview`, `extract_variables`, block and version methods           |
-| `designs`, `credentials`                                      | Hosted email designs and application credentials                                                                 |
-| `campaigns`                                                   | `create`, `list`, `get`, `update`, `delete`, `preview`, `submit`, `approve`, `reject`, `send`, `get_send_status` |
-| `domains`                                                     | `list`, `get`, `create`, `verify`, `delete`                                                                      |
-| `api_keys`, `keys`                                            | API key management and rotation                                                                                  |
-| `events`                                                      | `list`, `get`, `get_by_message_id`                                                                               |
-| `analytics`                                                   | `query`, `get_engagement_heatmap`, `get_geographic`, `get_providers`, `request_export`, `get_export`             |
-| `metrics`                                                     | `get`, `get_summary`                                                                                             |
-| `brand_theme`                                                 | `get`, `list`, `create`, `update`, `delete`, tracking-domain methods                                             |
-| `subusers`, `identity`, `ip_pools`, `ips`, `inbound`, `admin` | Account and infrastructure management                                                                            |
+| Attribute                                                     | Methods                                                                                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `emails`                                                      | `send`, `send_template`, `schedule`, `send_batch`, `validate`                                                             |
+| `designs`                                                     | Templates, releases, previews, sends, usage, deliveries, gallery, brands, tracking domains, assets, manifests (see above) |
+| `credentials`                                                 | Application credentials                                                                                                   |
+| `templates`                                                   | Deprecated: legacy template API (sunset 30 April 2027)                                                                    |
+| `campaigns`                                                   | `create`, `list`, `get`, `update`, `delete`, `preview`, `submit`, `approve`, `reject`, `send`, `get_send_status`          |
+| `domains`                                                     | `list`, `get`, `create`, `verify`, `delete`                                                                               |
+| `api_keys`, `keys`                                            | API key management and rotation                                                                                           |
+| `events`                                                      | `list`, `get`, `get_by_message_id`                                                                                        |
+| `analytics`                                                   | `query`, `get_engagement_heatmap`, `get_geographic`, `get_providers`, `request_export`, `get_export`                      |
+| `metrics`                                                     | `get`, `get_summary`                                                                                                      |
+| `brand_theme`                                                 | Deprecated: use the brand methods on `designs`                                                                            |
+| `subusers`, `identity`, `ip_pools`, `ips`, `inbound`, `admin` | Account and infrastructure management                                                                                     |
 
 ## Error Handling [#error-handling]
 
@@ -11524,21 +11606,54 @@ const page = await client.suppressions.list({ page: 1, limit: 25 });
 
 `reason` is one of `Bounce`, `Complaint`, `Unsubscribe` or `Manual`. To record a recipient's own opt-out, prefer `subscriptions.unsubscribe()`.
 
+## Templates and Brands (Studio) [#templates-and-brands-studio]
+
+Every template is a [Studio](/docs/features/studio) design. Your dashboard templates use the application key `"account"` (`ACCOUNT_APPLICATION`); a product with an `nr_app_` credential uses its own key.
+
+```ts
+import { NorthRelayClient, ACCOUNT_APPLICATION } from '@northrelay/sdk';
+const nr = new NorthRelayClient({ apiKey: process.env.NORTHRELAY_API_KEY! });
+
+// Templates
+const { data: page } = await nr.designs.listPage({ applicationKey: ACCOUNT_APPLICATION, search: 'welcome' });
+const { data: design } = await nr.designs.get(page.items[0].id);
+await nr.designs.update(design.id, { ...design.draft, subject: 'Welcome, {{first_name}}' }, design.revision);
+await nr.designs.preview(design.id, { sample: true, brandId: otherBrandId }); // try another brand
+await nr.designs.publish(design.id, design.revision + 1);
+await nr.designs.send(design.id, { to: [{ email: 'ana@example.com' }], variables: { first_name: 'Ana' } }, 'welcome-ana-1');
+const { data: usage } = await nr.designs.usage(design.id);           // campaigns, send counts
+const { data: deliveries } = await nr.designs.deliveries(design.id); // design and API sends
+
+// Gallery starters (asBlocks: edit in the visual editor)
+const { data: catalog } = await nr.designs.catalog({ search: 'receipt' });
+const { data: reviewed } = await nr.designs.inspectTemplate(catalog.gallery[0]);
+await nr.designs.adoptTemplate({ ...reviewed.source, asBlocks: true });
+
+// Brands and logos
+const { data: asset } = await nr.designs.uploadAsset({ imageBase64 });   // PNG, JPEG or WebP
+const { data: brand } = await nr.designs.createBrand({ theme: { name: 'Acme', logoUrl: asset.url, primaryColor: '#0f766e' } });
+await nr.designs.setDefaultBrand(brand.id);
+const { data: affected } = await nr.designs.brandUsage(brand.id);       // templates needing a publish
+```
+
+`templates` and `brandTheme` are deprecated (sunset 30 April 2027). Template ids are design ids, so `emails.send({ templateId })` keeps working.
+
 ## Other Resources [#other-resources]
 
-| Property                                                   | Methods                                                                                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `emails`                                                   | `send`, `sendTemplate`, `schedule`, `cancel`, `validate`, `sendBatch`, `getEvents`                                                                   |
-| `templates`                                                | `list`, `get`, `create`, `update`, `delete`, `preview`, `extractVariables`, block and version methods, `testSend`, `import`, `export`, `compileMjml` |
-| `designs`, `credentials`                                   | Hosted email designs and application credentials                                                                                                     |
-| `campaigns`                                                | `create`, `list`, `get`, `update`, `delete`, `preview`, `submit`, `approve`, `reject`, `send`, `getSendStatus`                                       |
-| `domains`                                                  | `list`, `get`, `create`, `verify`, `delete`                                                                                                          |
-| `apiKeys`, `keys`                                          | API key management and rotation                                                                                                                      |
-| `events`                                                   | `list`, `get`, `getByMessageId`                                                                                                                      |
-| `analytics`                                                | `query`, `getEngagementHeatmap`, `getGeographic`, `getProviders`, `requestExport`, `getExport`                                                       |
-| `metrics`                                                  | `get`, `getSummary`                                                                                                                                  |
-| `brandTheme`                                               | `get`, `list`, `create`, `update`, `delete`, tracking-domain methods                                                                                 |
-| `subusers`, `identity`, `ipPools`, `ips`, `inbox`, `admin` | Account and infrastructure management                                                                                                                |
+| Property                                                   | Methods                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `emails`                                                   | `send`, `sendTemplate`, `schedule`, `cancel`, `validate`, `sendBatch`, `getEvents`                                        |
+| `designs`                                                  | Templates, releases, previews, sends, usage, deliveries, gallery, brands, tracking domains, assets, manifests (see above) |
+| `credentials`                                              | Application credentials                                                                                                   |
+| `templates`                                                | Deprecated: legacy template API (sunset 30 April 2027)                                                                    |
+| `campaigns`                                                | `create`, `list`, `get`, `update`, `delete`, `preview`, `submit`, `approve`, `reject`, `send`, `getSendStatus`            |
+| `domains`                                                  | `list`, `get`, `create`, `verify`, `delete`                                                                               |
+| `apiKeys`, `keys`                                          | API key management and rotation                                                                                           |
+| `events`                                                   | `list`, `get`, `getByMessageId`                                                                                           |
+| `analytics`                                                | `query`, `getEngagementHeatmap`, `getGeographic`, `getProviders`, `requestExport`, `getExport`                            |
+| `metrics`                                                  | `get`, `getSummary`                                                                                                       |
+| `brandTheme`                                               | Deprecated: use the brand methods on `designs`                                                                            |
+| `subusers`, `identity`, `ipPools`, `ips`, `inbox`, `admin` | Account and infrastructure management                                                                                     |
 
 ## Error Handling [#error-handling]
 
