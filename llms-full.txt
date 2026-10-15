@@ -9805,7 +9805,7 @@ ping -c 1 10.0.2.2  # Sovereign relay
 
 ```bash
 # Check your IP against common blocklists
-# Use the built-in blocklist tool at /dashboard/tools/blocklist
+# Use the Blocklist status card on /dashboard/reputation
 # Or check manually:
 dig +short YOUR_IP.zen.spamhaus.org
 # If it returns an IP (e.g., 127.0.0.2), you're listed
