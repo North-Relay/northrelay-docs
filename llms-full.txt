@@ -5250,6 +5250,16 @@ def handle_webhook():
 
 ---
 
+## Dashboard: usage and activity [#dashboard-usage-and-activity]
+
+**Settings → Webhooks** in the dashboard shows, for the last 7 or 30 days, how many deliveries each endpoint received, how many failed, when the last one happened and a per-day sparkline. Each endpoint carries a health badge computed the same way as `GET /webhooks/{id}/health`: healthy at 95 % success or better, degraded at 80 %, failing below that or after 10 consecutive failures.
+
+Opening an endpoint shows its activity: deliveries and failures per day, the breakdown by event type, the latest attempts with their HTTP status, latency and the first 200 characters of a failed response, and the endpoint's lifecycle (created, edited, enabled, disabled, secret rotated). A failed attempt can be retried from there; the endpoint then receives a `webhook.retry` event whose `details` name the original delivery, because payloads are not stored. **Test** sends a sample event of a type the endpoint subscribes to and records the attempt like any other delivery.
+
+Every attempt counts, including tests and retries. Deliveries made before October 2026 have no recorded event type and appear as "unknown" in the breakdown. An endpoint's history is deleted with it.
+
+---
+
 ## Retry Policy [#retry-policy]
 
 If your endpoint does not respond with a `2xx` status code within 10 seconds, NorthRelay retries the delivery:
