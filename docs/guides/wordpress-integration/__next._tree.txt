@@ -3,4 +3,4 @@
 3:[["children",{"s":"__PAGE__","h":160}]]
 2:[["children",{"s":{"n":"slug","t":"oc","k":"guides/wordpress-integration","s":[]},"h":64,"c":"$Q3"}]]
 1:[["children",{"s":"docs","h":32,"c":"$Q2"}]]
-0:{"b":"9-JPteuKqw_IagKfEGCP6","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
+0:{"b":"FRqvlOuw1UFPyH0sKWNVH","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

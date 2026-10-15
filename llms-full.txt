@@ -471,6 +471,18 @@ An invalid or revoked key returns:
 }
 ```
 
+## Usage and Activity [#usage-and-activity]
+
+Every request made with a valid key is recorded against that key: the route (with ids collapsed to `:id`), the HTTP status, the client IP, the user agent and the duration. Requests refused for a missing scope are recorded too, with their `403`, so a key calling a route it may not reach shows up where its owner will see it. SMTP logins with a user key are recorded as `SMTP smtp/auth`. Invalid or revoked keys cannot be attributed and leave no trace here.
+
+Open **Dashboard > Settings > API Keys** and choose **Activity** on a key to see:
+
+- requests, errors and the error rate over the last 7 or 30 days, with a daily chart;
+- the busiest routes and the most recent calls, each with its status and origin;
+- the key's lifecycle: created, permissions edited, secret rotated, revoked.
+
+The key list shows the same totals per key with a sparkline, flags keys that expire within 14 days, and marks active keys older than 30 days that have never been used. History is kept for 90 days.
+
 ## Security Best Practices [#security-best-practices]
 
 1. **Never commit API keys to version control.** Store them in environment variables or a secrets manager.
