@@ -5983,6 +5983,12 @@ Go to **Dashboard > Domains** to see all your domains with their current verific
 
 If DNS records change or verification expires, click **Re-verify** on the domain's row in the dashboard. NorthRelay will re-check all DNS records.
 
+### When DNS Records Stop Working [#when-dns-records-stop-working]
+
+NorthRelay re-checks the DNS of every verified domain every 6 hours. If a domain's SPF record no longer includes `_spf.north-pipe.ca`, or its DKIM record is removed or changed, sending from that domain and its subdomains is **paused**: the send API answers `403 FORBIDDEN_SENDER` with the failing record, and campaigns show the reason before launch. Receivers would fail DMARC on that mail anyway, which hurts deliverability.
+
+Restore the records shown for the domain under **Dashboard > Domains** and click **Verify**: sending resumes as soon as SPF and DKIM pass. A temporary DNS lookup error never pauses sending.
+
 ### Removing a Domain [#removing-a-domain]
 
 1. Go to **Dashboard > Domains**
