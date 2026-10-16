@@ -5983,13 +5983,29 @@ DNS propagation can take up to 48 hours, though most changes take effect within 
 | State | Meaning | Action |
 |-------|---------|--------|
 | **Pending** | Domain added, DNS records not yet verified | Add DNS records and click Verify |
-| **Verified** | All DNS records confirmed | Domain is ready to use for sending |
+| **Verified** | DNS ownership and authentication confirmed | Sending also requires fresh clean reputation checks |
 | **Active** | Domain is being used for sending | No action needed |
 | **Failed** | Verification check failed | See Troubleshooting below |
 
+## Mandatory reputation checks [#mandatory-reputation-checks]
+
+Every sending domain must pass Spamhaus DBL and NordSpam DBL checks, including its parent domains through the registrable domain. Adding a custom domain starts the check; DNS verification alone does not enable sending. The domain row shows provider evidence, check time, expiry and a recheck control. A listing blocks sending even when SPF and DKIM pass. Clearing an administrative hold cannot bypass this requirement.
+
+Clean results expire after six hours and are refreshed periodically. Missing, stale, refused or unavailable checks temporarily block sending until fresh clean evidence is available. A failed lookup never counts as a clean result.
+
+| API error | Meaning | Next step |
+|---|---|---|
+| `DOMAIN_REPUTATION_BLOCKED` (403) | Sender or a parent is listed | Resolve the listing with the named provider, then recheck |
+| `DOMAIN_REPUTATION_PENDING` (409) | First check is pending | Retry after the check completes |
+| `DOMAIN_REPUTATION_UNAVAILABLE` (503) | Evidence is stale or unavailable | Retry later; contact support if it persists |
+
+Queued mail is checked again before submission. Temporary reputation failures retain queued messages for retry; listed domains cannot be sent.
+
+Operational platform accounts use the platform domain inventory and do not require a personal subdomain. This does not create a corporate sending identity: only an existing authorized, eligible mailbox or alias can be selected.
+
 ## Using Your Verified Domain [#using-your-verified-domain]
 
-Once verified, you can use your domain as the `from` address in API calls:
+Once DNS verification and reputation checks pass, you can use your domain as the `from` address in API calls:
 
 ```typescript
 await client.emails.send({
@@ -6016,7 +6032,7 @@ If DNS records change or verification expires, click **Re-verify** on the domain
 
 NorthRelay re-checks the DNS of every verified domain every 6 hours. If a domain's SPF record no longer includes `_spf.north-pipe.ca`, or its DKIM record is removed or changed, sending from that domain and its subdomains is **paused**: the send API answers `403 FORBIDDEN_SENDER` with the failing record, and campaigns show the reason before launch. Receivers would fail DMARC on that mail anyway, which hurts deliverability.
 
-Restore the records shown for the domain under **Dashboard > Domains** and click **Verify**: sending resumes as soon as SPF and DKIM pass. A temporary DNS lookup error never pauses sending.
+Restore the records shown for the domain under **Dashboard > Domains** and click **Verify**: sending resumes when SPF, DKIM and mandatory reputation checks pass. A temporary DNS lookup error never pauses sending.
 
 ### Removing a Domain [#removing-a-domain]
 
