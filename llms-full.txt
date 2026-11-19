@@ -5756,15 +5756,14 @@ The Blocklist Monitor checks your domain and sending IPs against 13 industry-sta
 
 ### Provider Coverage [#provider-coverage]
 
-The monitor checks 13 consolidated providers organized into four tiers by importance:
+The monitor checks 12 consolidated providers organized into four tiers by importance:
 
-#### Tier 1: Industry Standard (3 providers) [#tier-1-industry-standard-3-providers]
+#### Tier 1: Industry Standard (2 providers) [#tier-1-industry-standard-2-providers]
 
 These are the blocklists that major mailbox providers actively check. A listing here has the most impact.
 
 | Provider | Type | Description |
 |----------|------|-------------|
-| **Spamhaus ZEN** | IP-based | Combined Spamhaus blocklist (SBL + XBL + PBL). The most widely used blocklist. |
 | **Barracuda** | IP-based | Barracuda Networks reputation system. Used by many enterprise mail gateways. |
 | **SpamCop** | IP-based | Crowdsourced spam reporting. Listings are time-based and auto-expire. |
 
@@ -5823,14 +5822,13 @@ Checks domain reputation rather than IP addresses.
 1. **Identify the cause.** Review your [Reputation Monitoring](/docs/features/reputation-monitoring) dashboard for incidents.
 2. **Fix the underlying issue.** High bounce rates and spam complaints are the most common causes of blocklisting.
 3. **Request delisting.** Each blocklist provider has a delisting process:
-   - **Spamhaus:** [https://check.spamhaus.org](https://check.spamhaus.org)
    - **Barracuda:** [https://www.barracudacentral.org/lookups](https://www.barracudacentral.org/lookups)
    - **SpamCop:** Listings auto-expire after reports stop (typically 24-48 hours)
 4. **Re-check.** After delisting, run the Blocklist Monitor again to confirm.
 
 ### Technical Details [#technical-details]
 
-- All 13 providers are queried in parallel
+- All 12 providers are queried in parallel
 - Each query has a 3-second timeout
 - No registration or paid subscription required -- all providers are freely accessible
 - Queries use standard DNS-based blocklist lookup (reverse IP + blocklist zone)
@@ -5989,7 +5987,7 @@ DNS propagation can take up to 48 hours, though most changes take effect within 
 
 ## Mandatory reputation checks [#mandatory-reputation-checks]
 
-Every sending domain must pass Spamhaus DBL and NordSpam DBL checks, including its parent domains through the registrable domain. Adding a custom domain starts the check; DNS verification alone does not enable sending. The domain row shows provider evidence, check time, expiry and a recheck control. A listing blocks sending even when SPF and DKIM pass. Clearing an administrative hold cannot bypass this requirement.
+Every sending domain must pass the NordSpam DBL check, including its parent domains through the registrable domain. Adding a custom domain starts the check; DNS verification alone does not enable sending. The domain row shows provider evidence, check time, expiry and a recheck control. A listing blocks sending even when SPF and DKIM pass. Clearing an administrative hold cannot bypass this requirement.
 
 Clean results expire after six hours and are refreshed periodically. Missing, stale, refused or unavailable checks temporarily block sending until fresh clean evidence is available. A failed lookup never counts as a clean result.
 
@@ -9830,7 +9828,7 @@ ping -c 1 10.0.2.2  # Sovereign relay
 # Check your IP against common blocklists
 # Use the Blocklist status card on /dashboard/reputation
 # Or check manually:
-dig +short YOUR_IP.zen.spamhaus.org
+dig +short YOUR_IP.b.barracudacentral.org
 # If it returns an IP (e.g., 127.0.0.2), you're listed
 # If NXDOMAIN, you're clean
 ```
